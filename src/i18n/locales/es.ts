@@ -91,6 +91,7 @@ export const es = {
       block: 'Bloquear hasta escribir la tecla correcta',
     },
     autoIndent: 'Indentación automática al presionar Enter',
+    autoClose: 'Cerrar paréntesis, corchetes y llaves automáticamente',
     idlePause: 'Pausa automática por inactividad',
     idleOff: 'Desactivada',
     start: 'Comenzar',

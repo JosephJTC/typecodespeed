@@ -1,4 +1,4 @@
-import { buildTarget, Evaluator, type ErrorKind, type KeystrokeResult, type Target } from '../engine';
+import { buildTarget, Evaluator, matchBrackets, type ErrorKind, type KeystrokeResult, type Target } from '../engine';
 import type { FinishReason, KeystrokeLog, PauseReason, SessionConfig, SessionSnapshot, SessionStatus } from './types';
 
 const CHARS_PER_WORD = 5;
@@ -48,6 +48,8 @@ export class TypingSession {
   private lastActivity = 0;
   /** Number of evaluator pushes per user action, so backspace undoes a whole action (e.g. Enter + auto-indent). */
   private groups: number[] = [];
+  /** Closing brackets typed automatically by the last action: typing them by hand is swallowed. */
+  private overtype: string[] = [];
   private segment = 0;
   private finishedTexts: TextStats[] = [];
   private counters = { typed: 0, correct: 0, errors: 0, corrections: 0 };
@@ -111,6 +113,8 @@ export class TypingSession {
       this.record('char', it.ch, this.evaluator.push(it.ch), pushed > 0);
       pushed++;
     }
+    this.overtype = [];
+    pushed += this.closeBrackets();
     this.groups.push(pushed);
     this.afterAction();
     this.emit();
@@ -306,6 +310,11 @@ export class TypingSession {
 
   private typeChar(ch: string): boolean {
     const ev = this.evaluator;
+    if (this.overtype[0] === ch) {
+      this.overtype.shift();
+      return true;
+    }
+    this.overtype = [];
     if (this.config.errorPolicy === 'block') {
       const preview = ev.peek(ch);
       if (preview.status === 'error') {
@@ -324,9 +333,77 @@ export class TypingSession {
         this.record('char', it.ch, ev.push(it.ch), true);
         pushed++;
       }
+      if (result.status === 'free') pushed += this.indentLine();
     }
+    pushed += this.closeBrackets();
     this.groups.push(pushed);
     return true;
+  }
+
+  /** Index of the next item that is not whitespace, starting at the cursor. */
+  private nextCodeItem(): number {
+    const items = this.target.items;
+    let i = this.evaluator.pos;
+    while (i < items.length) {
+      const it = items[i];
+      if (it.kind === 'char' && !isWs(it.ch)) break;
+      i++;
+    }
+    return i;
+  }
+
+  /** Types `text` as automatic whitespace while the engine accepts it; returns the number of characters typed. */
+  private autoWhitespace(text: string): number {
+    let n = 0;
+    for (const ch of text) {
+      if (this.evaluator.peek(ch).status === 'error') break;
+      this.record('char', ch, this.evaluator.push(ch), true);
+      n++;
+    }
+    return n;
+  }
+
+  /** After a line break typed in a flexible gap: indents the new line like the reference line of the next token. */
+  private indentLine(): number {
+    const { items, text } = this.target;
+    const next = items[this.nextCodeItem()];
+    const src = next ? next.src : text.length;
+    const lineStart = text.lastIndexOf('\n', src - 1) + 1;
+    return this.autoWhitespace(/^[ \t]*/.exec(text.slice(lineStart, src))![0]);
+  }
+
+  /**
+   * Editor-style bracket pairs: when the next token is the closing bracket of a
+   * correctly typed opening bracket, types it (with the reference whitespace
+   * before it). Returns the number of characters typed.
+   */
+  private closeBrackets(): number {
+    if (!this.config.autoClose) return 0;
+    const ev = this.evaluator;
+    const { items, text } = this.target;
+    const pairs = matchBrackets(this.target);
+    let total = 0;
+    for (;;) {
+      const at = this.nextCodeItem();
+      const closer = items[at];
+      const opener = pairs.get(at);
+      if (!closer || closer.kind !== 'char' || opener === undefined || ev.states[opener] !== 'correct') break;
+      const here = items[ev.pos];
+      // Whitespace the user already typed in the current gap is kept as is.
+      const from = here.kind === 'gap' && ev.gapTyped > 0 ? here.srcEnd : here.src;
+      const logged = this.log.length;
+      const n = this.autoWhitespace(text.slice(from, closer.src));
+      const preview = ev.peek(closer.ch);
+      if (preview.status !== 'correct' || preview.item !== at) {
+        for (let i = 0; i < n; i++) ev.pop();
+        this.log.length = logged;
+        break;
+      }
+      this.record('char', closer.ch, ev.push(closer.ch), true);
+      this.overtype.push(closer.ch);
+      total += n + 1;
+    }
+    return total;
   }
 
   private undoOne(kind: 'backspace' | 'wordBackspace', silent = false): boolean {
@@ -335,6 +412,7 @@ export class TypingSession {
     if (n === undefined) return false;
     if (this._status === 'paused') this.resume();
     for (let i = 0; i < n; i++) this.evaluator.pop();
+    this.overtype = [];
     if (!silent) this.counters.corrections++;
     this.log.push({ t: this.elapsed(), kind, status: 'undo', segment: this.segment });
     this.lastActivity = this.now();
@@ -403,6 +481,7 @@ export class TypingSession {
       tokensCorrect: tokens.correct,
     });
     this.segment++;
+    this.overtype = [];
     const text = this.config.nextText!();
     this.texts.push(text);
     this.target = buildTarget(text, this.config.language, this.config.compare);

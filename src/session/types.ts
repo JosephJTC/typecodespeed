@@ -19,8 +19,13 @@ export interface SessionConfig {
   timeLimitMs?: number;
   /** Timed test: supplies the next text when the current one is completed before the time is up. */
   nextText?: () => string;
-  /** After an accepted line break, type the indentation that must be reproduced exactly. */
+  /** After an accepted line break, type the indentation of the line, as an editor does. */
   autoIndent: boolean;
+  /**
+   * Editor-style bracket pairs: once `(`, `[` or `{` is typed correctly, its closing
+   * bracket is typed automatically when the cursor reaches it (typing it anyway is harmless).
+   */
+  autoClose?: boolean;
   /** Pauses the clock after this much inactivity (the idle time is not counted). 0 disables it. */
   idleTimeoutMs: number;
   /** Clock in milliseconds; injectable for tests. */

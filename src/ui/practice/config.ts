@@ -21,6 +21,7 @@ export interface PracticeSettings {
   custom: WhitespaceRules;
   errorPolicy: ErrorPolicy;
   autoIndent: boolean;
+  autoClose: boolean;
   idleSec: number;
   /** Code font size in pixels. */
   fontSize: number;
@@ -42,6 +43,7 @@ export const DEFAULT_SETTINGS: PracticeSettings = {
   custom: { indentation: 'ignore', inlineSpaces: 'collapse', lineBreaks: 'exact', blankLines: 'ignore' },
   errorPolicy: 'advance',
   autoIndent: true,
+  autoClose: true,
   idleSec: 10,
   fontSize: 15,
 };
@@ -136,6 +138,7 @@ export function sessionConfig(s: PracticeSettings, language: string, next?: () =
     timeLimitMs: s.testType === 'timed' ? s.durationSec * 1000 : undefined,
     nextText: next,
     autoIndent: s.autoIndent,
+    autoClose: s.autoClose,
     idleTimeoutMs: s.idleSec * 1000,
   };
 }
