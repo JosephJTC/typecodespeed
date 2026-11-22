@@ -1,45 +1,64 @@
 import { useCallback, useState } from 'react';
-import { TypingSession } from '../../session';
 import { t } from '../../i18n';
+import type { RefFile } from '../../library';
+import { TypingSession } from '../../session';
 import type { TestMeta } from '../../stats';
-import { DEFAULT_SETTINGS, metaFor, sessionConfig, textsFor, type PracticeSettings } from './config';
+import { metaFor, resolveSource, sessionConfig, textsFor, type PracticeSettings, type ResolvedSource } from './config';
 import { SetupPanel } from './SetupPanel';
 import { TypingView } from './TypingView';
 
 interface Run {
   session: TypingSession;
   text: string;
+  source: ResolvedSource;
   /** Settings in effect when the test started (they may change afterwards). */
   meta: TestMeta;
 }
 
-export function PracticePage() {
-  const [settings, setSettings] = useState<PracticeSettings>(DEFAULT_SETTINGS);
+interface Props {
+  settings: PracticeSettings;
+  files: readonly RefFile[];
+  onChange: (s: PracticeSettings) => void;
+  onOpenLibrary: () => void;
+  onOpenSettings: () => void;
+}
+
+export function PracticePage({ settings, files, onChange, onOpenLibrary, onOpenSettings }: Props) {
   const [run, setRun] = useState<Run | null>(null);
 
+  const resolve = useCallback(
+    (previousId?: string) => resolveSource(settings, files, { all: t('practice.allSamplesShort'), custom: t('practice.customSourceShort') }, Math.random, previousId),
+    [settings, files],
+  );
+
   const start = useCallback(
-    (previous?: string) => {
-      const { first, next } = textsFor(settings, Math.random, previous);
+    (previous?: Run, sameSource = false) => {
+      const source = sameSource && previous ? previous.source : resolve(previous?.source.id);
+      if (!source) return;
+      const { first, next } = textsFor(settings, source, Math.random, previous?.session.target.text);
       if (!first.trim()) return;
-      setRun({ session: new TypingSession(first, sessionConfig(settings, next)), text: first, meta: metaFor(settings, { all: t('practice.allSamplesShort'), custom: t('practice.customSourceShort') }) });
+      setRun({ session: new TypingSession(first, sessionConfig(settings, source.language, next)), text: first, source, meta: metaFor(settings, source) });
     },
-    [settings],
+    [settings, resolve],
   );
 
   const restart = useCallback(() => {
     if (!run) return;
     // Timed tests draw new texts anyway; the others repeat the same text.
-    if (settings.testType === 'timed') return start();
-    setRun({ session: new TypingSession(run.text, sessionConfig(settings)), text: run.text, meta: run.meta });
+    if (settings.testType === 'timed') return start(run, true);
+    setRun({ ...run, session: new TypingSession(run.text, sessionConfig(settings, run.source.language)) });
   }, [run, settings, start]);
 
-  if (!run) return <SetupPanel settings={settings} onChange={setSettings} onStart={() => start()} />;
+  if (!run) {
+    return <SetupPanel settings={settings} files={files} ready={resolve() !== null} onChange={onChange} onStart={() => start()} onOpenLibrary={onOpenLibrary} onOpenSettings={onOpenSettings} />;
+  }
+  const canNext = settings.testType !== 'full' || settings.source === 'all' || settings.source === 'refRandom';
   return (
     <TypingView
       session={run.session}
       meta={run.meta}
       onRestart={restart}
-      onNext={settings.testType !== 'full' || settings.source === 'all' ? () => start(run.session.target.text) : undefined}
+      onNext={canNext ? () => start(run) : undefined}
       onSettings={() => setRun(null)}
     />
   );

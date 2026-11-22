@@ -274,3 +274,26 @@ export function comparableTo(record: TestRecord, all: readonly TestRecord[]): Te
     (r) => r.id !== record.id && r.finishedAt <= record.finishedAt && r.testType === record.testType && r.mode === record.mode && (r.timeLimitMs ?? 0) === (record.timeLimitMs ?? 0),
   );
 }
+
+export interface SourceSummary {
+  sourceId: string;
+  sourceName: string;
+  tests: number;
+  avgWpm: number;
+  bestWpm: number;
+  avgAccuracy: number;
+  lastAt: number;
+}
+
+/** Performance grouped by practiced code (reference, sample…), most recently practiced first. */
+export function bySource(records: readonly TestRecord[]): SourceSummary[] {
+  const groups = new Map<string, TestRecord[]>();
+  for (const r of records) groups.set(r.sourceId, [...(groups.get(r.sourceId) ?? []), r]);
+  return [...groups.entries()]
+    .map(([sourceId, list]) => {
+      const s = summarize(list);
+      const last = list.reduce((a, b) => (b.finishedAt > a.finishedAt ? b : a));
+      return { sourceId, sourceName: last.sourceName, tests: list.length, avgWpm: s.avgWpm, bestWpm: s.bestWpm, avgAccuracy: s.avgAccuracy, lastAt: last.finishedAt };
+    })
+    .sort((a, b) => b.lastAt - a.lastAt);
+}

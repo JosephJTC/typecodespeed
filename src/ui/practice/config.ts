@@ -1,6 +1,7 @@
 import type { CompareOptions, WhitespaceRules } from '../../engine';
 import type { ErrorPolicy, SessionConfig } from '../../session';
 import type { TestMeta, TestType } from '../../stats';
+import { filterFiles, pickRandomFile, type FileQuery, type RefFile } from '../../library';
 import { DEFAULT_SNIPPET_OPTIONS, pickSnippet, SAMPLES } from '../../snippets';
 
 export type { TestType } from '../../stats';
@@ -8,63 +9,129 @@ export type { TestType } from '../../stats';
 export interface PracticeSettings {
   testType: TestType;
   durationSec: number;
-  /** Sample id, `all` or `custom`. */
+  /** Sample id, `all`, `custom`, `ref` (the selected reference file) or `refRandom` (a random reference). */
   source: string;
   customCode: string;
+  /** Path of the selected reference file within the local library. */
+  refPath: string;
+  /** Filters that limit which references `refRandom` may pick. */
+  refQuery: FileQuery;
   mode: CompareOptions['mode'];
   comments: CompareOptions['comments'];
   custom: WhitespaceRules;
   errorPolicy: ErrorPolicy;
   autoIndent: boolean;
   idleSec: number;
+  /** Code font size in pixels. */
+  fontSize: number;
 }
 
-export const DURATIONS = [15, 30, 60, 120];
+export const DURATIONS = [15, 30, 60, 120, 300];
 export const IDLE_OPTIONS = [0, 5, 10, 30];
+export const FONT_SIZES = [13, 15, 17, 19, 22];
 
 export const DEFAULT_SETTINGS: PracticeSettings = {
   testType: 'full',
   durationSec: 60,
   source: SAMPLES[0].id,
   customCode: '',
+  refPath: '',
+  refQuery: {},
   mode: 'tolerant',
   comments: 'omit',
   custom: { indentation: 'ignore', inlineSpaces: 'collapse', lineBreaks: 'exact', blankLines: 'ignore' },
   errorPolicy: 'advance',
   autoIndent: true,
   idleSec: 10,
+  fontSize: 15,
 };
 
-export function sourcesFor(s: PracticeSettings): string[] {
-  if (s.source === 'custom') return s.customCode.trim() ? [s.customCode] : [];
-  if (s.source === 'all') return SAMPLES.map((x) => x.code);
+const SETTINGS_KEY = 'typecodespeed.settings';
+
+/** Restores saved settings, ignoring unknown keys and values of the wrong type. */
+export function parseSettings(json: string | null): PracticeSettings {
+  const out: Record<string, unknown> = { ...DEFAULT_SETTINGS };
+  try {
+    const saved: unknown = JSON.parse(json ?? 'null');
+    if (saved && typeof saved === 'object') {
+      for (const [k, def] of Object.entries(DEFAULT_SETTINGS)) {
+        const v = (saved as Record<string, unknown>)[k];
+        if (v !== null && typeof v === typeof def) out[k] = typeof def === 'object' ? { ...def, ...(v as object) } : v;
+      }
+    }
+  } catch {
+    // Corrupt settings: fall back to the defaults.
+  }
+  return out as unknown as PracticeSettings;
+}
+
+export function loadSettings(): PracticeSettings {
+  try {
+    return parseSettings(localStorage.getItem(SETTINGS_KEY));
+  } catch {
+    return DEFAULT_SETTINGS;
+  }
+}
+
+export function saveSettings(s: PracticeSettings): void {
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+  } catch {
+    // Storage unavailable (private mode): settings last for this visit only.
+  }
+}
+
+export const isRefSource = (source: string) => source === 'ref' || source === 'refRandom';
+export const REF_PREFIX = 'ref:';
+
+/** The code a test draws from, with what is needed to label the result. */
+export interface ResolvedSource {
+  id: string;
+  name: string;
+  language: string;
+  codes: string[];
+}
+
+/** Finds the code to practice. `refRandom` draws a file, avoiding `previousId` when possible. */
+export function resolveSource(
+  s: PracticeSettings,
+  files: readonly RefFile[],
+  names: { all: string; custom: string },
+  rand: () => number = Math.random,
+  previousId?: string,
+): ResolvedSource | null {
+  const ofFile = (f: RefFile | undefined): ResolvedSource | null => (f ? { id: REF_PREFIX + f.path, name: f.path, language: f.language, codes: [f.text] } : null);
+  if (s.source === 'ref') return ofFile(files.find((f) => f.path === s.refPath));
+  if (s.source === 'refRandom') return ofFile(pickRandomFile(filterFiles(files, s.refQuery), rand, previousId?.slice(REF_PREFIX.length)));
+  if (s.source === 'custom') return s.customCode.trim() ? { id: 'custom', name: names.custom, language: 'cpp', codes: [s.customCode] } : null;
+  if (s.source === 'all') return { id: 'all', name: names.all, language: 'cpp', codes: SAMPLES.map((x) => x.code) };
   const sample = SAMPLES.find((x) => x.id === s.source);
-  return sample ? [sample.code] : [];
+  return sample ? { id: sample.id, name: sample.name, language: 'cpp', codes: [sample.code] } : null;
 }
 
 /** First text of a test and, for timed tests, a generator of further texts. */
 export function textsFor(
   s: PracticeSettings,
+  source: ResolvedSource,
   rand: () => number = Math.random,
   /** Text just practiced; a different one is chosen when possible. */
   previous?: string,
 ): { first: string; next?: () => string } {
-  const sources = sourcesFor(s);
-  if (sources.length === 0) return { first: '' };
-  if (s.testType === 'snippet') return { first: pickSnippet(sources, rand, DEFAULT_SNIPPET_OPTIONS, 'cpp', previous) };
+  const { codes, language } = source;
+  if (s.testType === 'snippet') return { first: pickSnippet(codes, rand, DEFAULT_SNIPPET_OPTIONS, language, previous) };
   if (s.testType === 'timed') {
     let last = previous;
-    const next = () => (last = pickSnippet(sources, rand, DEFAULT_SNIPPET_OPTIONS, 'cpp', last));
+    const next = () => (last = pickSnippet(codes, rand, DEFAULT_SNIPPET_OPTIONS, language, last));
     return { first: next(), next };
   }
-  const fresh = sources.length > 1 ? sources.filter((x) => x !== previous) : sources;
+  const fresh = codes.length > 1 ? codes.filter((x) => x !== previous) : codes;
   return { first: fresh[Math.floor(rand() * fresh.length)] };
 }
 
-export function sessionConfig(s: PracticeSettings, next?: () => string): SessionConfig {
+export function sessionConfig(s: PracticeSettings, language: string, next?: () => string): SessionConfig {
   return {
     compare: { mode: s.mode, comments: s.comments, custom: s.custom },
-    language: 'cpp',
+    language,
     errorPolicy: s.errorPolicy,
     timeLimitMs: s.testType === 'timed' ? s.durationSec * 1000 : undefined,
     nextText: next,
@@ -74,13 +141,12 @@ export function sessionConfig(s: PracticeSettings, next?: () => string): Session
 }
 
 /** What gets stored with the result so that tests can be filtered and compared. */
-export function metaFor(s: PracticeSettings, names: { all: string; custom: string }): TestMeta {
-  const sample = SAMPLES.find((x) => x.id === s.source);
+export function metaFor(s: PracticeSettings, source: ResolvedSource): TestMeta {
   return {
     testType: s.testType,
-    sourceId: s.source,
-    sourceName: sample?.name ?? (s.source === 'all' ? names.all : names.custom),
-    language: 'cpp',
+    sourceId: source.id,
+    sourceName: source.name,
+    language: source.language,
     mode: s.mode,
     comments: s.comments,
     errorPolicy: s.errorPolicy,
