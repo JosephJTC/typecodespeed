@@ -5,6 +5,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TypingSession } from '../../../session';
 import { TypingView } from '../TypingView';
 
+const META = { testType: 'full', sourceName: 'Prueba', sourceId: 'test', language: 'cpp', mode: 'tolerant', comments: 'omit', errorPolicy: 'advance' } as const;
+
 afterEach(cleanup);
 
 function setup(text: string, policy: 'advance' | 'block' = 'advance', onSettings = () => {}) {
@@ -16,7 +18,7 @@ function setup(text: string, policy: 'advance' | 'block' = 'advance', onSettings
     idleTimeoutMs: 0,
   });
   const onRestart = vi.fn();
-  render(<TypingView session={session} onRestart={onRestart} onSettings={onSettings} />);
+  render(<TypingView session={session} meta={META} onRestart={onRestart} onSettings={onSettings} />);
   const input = screen.getByRole('textbox') as HTMLTextAreaElement;
   return { session, input, onRestart };
 }

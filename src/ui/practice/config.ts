@@ -1,8 +1,9 @@
 import type { CompareOptions, WhitespaceRules } from '../../engine';
 import type { ErrorPolicy, SessionConfig } from '../../session';
+import type { TestMeta, TestType } from '../../stats';
 import { DEFAULT_SNIPPET_OPTIONS, pickSnippet, SAMPLES } from '../../snippets';
 
-export type TestType = 'full' | 'timed' | 'snippet';
+export type { TestType } from '../../stats';
 
 export interface PracticeSettings {
   testType: TestType;
@@ -69,5 +70,20 @@ export function sessionConfig(s: PracticeSettings, next?: () => string): Session
     nextText: next,
     autoIndent: s.autoIndent,
     idleTimeoutMs: s.idleSec * 1000,
+  };
+}
+
+/** What gets stored with the result so that tests can be filtered and compared. */
+export function metaFor(s: PracticeSettings, names: { all: string; custom: string }): TestMeta {
+  const sample = SAMPLES.find((x) => x.id === s.source);
+  return {
+    testType: s.testType,
+    sourceId: s.source,
+    sourceName: sample?.name ?? (s.source === 'all' ? names.all : names.custom),
+    language: 'cpp',
+    mode: s.mode,
+    comments: s.comments,
+    errorPolicy: s.errorPolicy,
+    timeLimitMs: s.testType === 'timed' ? s.durationSec * 1000 : undefined,
   };
 }
