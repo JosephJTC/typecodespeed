@@ -105,6 +105,13 @@ export function pickSnippet(
   const src = normalizeSource(usable[Math.floor(rand() * usable.length)]);
   const lines = src.split('\n');
   const len = Math.min(options.maxLines, lines.length);
-  const from = Math.floor(rand() * (lines.length - len + 1));
-  return dedent(normalizeSource(lines.slice(from, from + len).join('\n')));
+  const windows = new Set<string>();
+  for (let from = 0; from + len <= lines.length; from++) {
+    const w = dedent(normalizeSource(lines.slice(from, from + len).join('\n')));
+    if (w.trim()) windows.add(w);
+  }
+  const all = [...windows];
+  const freshWindows = all.filter((w) => w !== avoid);
+  const windowPool = freshWindows.length > 0 ? freshWindows : all;
+  return windowPool.length > 0 ? windowPool[Math.floor(rand() * windowPool.length)] : '';
 }

@@ -58,7 +58,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .stat dt { font-size: 0.75rem; color: #8b93a7; text-transform: uppercase; letter-spacing: 0.04em; }
 .stat dd { margin: 2px 0 0; font-size: 1.1rem; font-variant-numeric: tabular-nums; }
 .typing-area { position: relative; }
-.hidden-input { position: absolute; top: 0; left: 0; width: 1px; height: 1px; opacity: 0; resize: none; border: 0; padding: 0; overflow: hidden; pointer-events: none; caret-color: transparent; }
+.hidden-input { position: absolute; top: 0; left: 0; width: 1px; height: 1px; min-height: 0; opacity: 0; resize: none; border: 0; padding: 0; overflow: hidden; pointer-events: none; caret-color: transparent; }
 .code-view {
   position: relative; z-index: 1; cursor: text;
   background: #171a23; border: 1px solid #2a2f3d; border-radius: 8px; padding: 12px 0;

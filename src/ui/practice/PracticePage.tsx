@@ -34,7 +34,7 @@ export function PracticePage() {
     <TypingView
       session={run.session}
       onRestart={restart}
-      onNext={settings.testType !== 'full' || settings.source === 'all' ? () => start(run.text) : undefined}
+      onNext={settings.testType !== 'full' || settings.source === 'all' ? () => start(run.session.target.text) : undefined}
       onSettings={() => setRun(null)}
     />
   );

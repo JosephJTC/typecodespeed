@@ -84,6 +84,14 @@ describe('extracción de fragmentos', () => {
     expect(pickSnippet([single], rng(1), opts, 'cpp', single)).toBe(single);
   });
 
+  it('la ventana de líneas tampoco repite el fragmento anterior', () => {
+    const src = Array.from({ length: 31 }, (_, i) => `int x${i};`).join('\n');
+    for (let seed = 0; seed < 20; seed++) {
+      const prev = pickSnippet([src], rng(seed));
+      expect(pickSnippet([src], rng(seed + 100), undefined, 'cpp', prev)).not.toBe(prev);
+    }
+  });
+
   it('fuentes vacías devuelven texto vacío', () => {
     expect(pickSnippet(['', '   '], rng(1))).toBe('');
   });
