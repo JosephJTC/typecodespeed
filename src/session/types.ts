@@ -1,4 +1,4 @@
-import type { CompareOptions, ErrorKind } from '../engine';
+import type { CompareOptions, ErrorKind, TokenType } from '../engine';
 
 /** What happens when a wrong key is pressed. */
 export type ErrorPolicy =
@@ -36,6 +36,10 @@ export interface KeystrokeLog {
   ch?: string;
   status: 'correct' | 'error' | 'free' | 'rejected' | 'undo';
   error?: ErrorKind;
+  /** Character the engine expected at that point (absent for whitespace gaps and extra characters). */
+  expected?: string;
+  /** Type of the token the keystroke belongs to (`whitespace` for gaps between tokens). */
+  tokenType?: TokenType;
   /** Inserted automatically (auto-indentation), not typed by the user. */
   auto?: boolean;
   segment: number;

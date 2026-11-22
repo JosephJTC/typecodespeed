@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { t } from '../../i18n';
 import type { TypingSession } from '../../session';
+import type { TestMeta } from '../../stats';
 import { CodeView } from './CodeView';
 import { keyAction } from './keyboard';
 import { Results } from './Results';
@@ -9,6 +10,7 @@ import { StatsBar } from './StatsBar';
 
 interface Props {
   session: TypingSession;
+  meta: TestMeta;
   onRestart: () => void;
   onNext?: () => void;
   onSettings: () => void;
@@ -20,7 +22,7 @@ interface Props {
  * keys are handled in `keydown`. Every event is applied synchronously to the
  * session, which is the single source of truth.
  */
-export function TypingView({ session, onRestart, onNext, onSettings }: Props) {
+export function TypingView({ session, meta, onRestart, onNext, onSettings }: Props) {
   const version = useSyncExternalStore(
     (cb) => session.subscribe(cb),
     () => session.version,
@@ -96,7 +98,7 @@ export function TypingView({ session, onRestart, onNext, onSettings }: Props) {
     }
   };
 
-  if (finished) return <Results snapshot={snap} onRestart={onRestart} onNext={onNext} onSettings={onSettings} />;
+  if (finished) return <Results session={session} meta={meta} onRestart={onRestart} onNext={onNext} onSettings={onSettings} />;
 
   return (
     <div className="typing">
