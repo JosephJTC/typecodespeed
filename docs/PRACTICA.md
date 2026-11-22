@@ -37,9 +37,10 @@ La vista no dibuja la referencia en una posición fija: muestra lo que realmente
 - **Cronómetro:** empieza con la primera tecla. Solo cuenta el tiempo activo.
 - **Pausa:** Esc pausa o continúa; perder el foco pausa; la pausa por inactividad (configurable) descuenta el tiempo inactivo. Escribir mientras está en pausa reanuda y la tecla se procesa (no se pierde).
 - **Errores:** *avanzar* marca el error y continúa; *bloquear* rechaza la tecla hasta que se escriba la correcta.
-- **Retroceso:** deshace la última acción (Enter + indentación automática se deshacen juntas). Ctrl+Retroceso borra el token actual.
-- **Indentación:** opcional automática al presionar Enter; Tab completa la indentación esperada. Solo importa en modos donde la indentación es exacta.
-- **Métricas:** WPM = caracteres correctos / 5 por minuto; WPM bruto cuenta todas las teclas; la precisión cuenta también los errores corregidos o rechazados. Las teclas automáticas no cuentan.
+- **Retroceso:** deshace la última acción (una tecla y lo que insertó automáticamente, sea indentación o cierres, se deshacen juntos). Ctrl+Retroceso borra el token actual.
+- **Indentación automática:** al presionar Enter, la línea nueva queda indentada como la línea de la referencia donde está el siguiente token. Tab completa la indentación esperada en los modos donde es exacta. Se puede desactivar en Ajustes.
+- **Cierre automático:** cuando escribes bien `(`, `[` o `{`, su cierre queda insertado (se ve más claro que el resto del código pendiente). Al llegar a él se escribe solo, junto con el salto y la indentación que lo preceden en la referencia. Si lo escribes a mano por costumbre, la tecla se ignora: no duplica el cierre ni cuenta como error. No aplica dentro de cadenas, caracteres ni comentarios, ni cuando la apertura se escribió mal. Se puede desactivar en Ajustes.
+- **Métricas:** WPM = caracteres correctos / 5 por minuto; WPM bruto cuenta todas las teclas; la precisión cuenta también los errores corregidos o rechazados. Las teclas automáticas no cuentan como pulsaciones ni para la precisión, pero los cierres insertados sí cuentan como caracteres correctos del texto, así que suben un poco el WPM neto.
 - **Captura de teclado:** los caracteres llegan por el evento `input` de un textarea oculto, así que una ráfaga de teclas, las teclas muertas y los IME no pierden caracteres. Pegar está deshabilitado.
 
 ## Atajos

@@ -39,7 +39,7 @@ Notas de cálculo:
 
 - El tiempo es **activo**: las pausas no cuentan ni aparecen en las gráficas.
 - La demora de una tecla es el tiempo desde la pulsación anterior; las mayores de 5 s se descartan como titubeos.
-- La indentación automática no cuenta como pulsación.
+- La indentación automática y los cierres insertados automáticamente no cuentan como pulsaciones. Los cierres insertados sí cuentan como caracteres correctos, por lo que el WPM neto puede quedar algo por encima del bruto.
 - La línea de tiempo usa intervalos de 1 s (más largos en pruebas de más de un minuto, para tener 60 puntos como máximo). Dentro de cada intervalo se cuentan las pulsaciones correctas en el momento en que se escriben.
 
 ## Gráficas

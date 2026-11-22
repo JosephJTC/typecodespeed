@@ -52,6 +52,10 @@ export function SettingsPage({ settings: s, onChange }: Props) {
           <input type="checkbox" checked={s.autoIndent} onChange={(e) => set('autoIndent', e.target.checked)} />
           {t('practice.autoIndent')}
         </label>
+        <label className="checkbox">
+          <input type="checkbox" checked={s.autoClose} onChange={(e) => set('autoClose', e.target.checked)} />
+          {t('practice.autoClose')}
+        </label>
       </div>
 
       <h3>{t('settings.appearance')}</h3>

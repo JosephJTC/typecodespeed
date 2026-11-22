@@ -8,6 +8,7 @@ const CLASS: Record<DisplayCode, string> = {
   f: 'ch-typed-space',
   x: 'ch-extra',
   p: 'ch-pending',
+  a: 'ch-auto',
 };
 
 interface Props {
@@ -15,12 +16,14 @@ interface Props {
   /** Changes on every keystroke; used to re-render. */
   version: number;
   focused: boolean;
+  /** Highlights the closing brackets that are already inserted. */
+  autoClose?: boolean;
 }
 
 /** Draws what the user typed followed by the pending code, which flows after it. */
-export function CodeView({ evaluator, version, focused }: Props) {
+export function CodeView({ evaluator, version, focused, autoClose }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { text, codes, caret } = buildDisplay(evaluator);
+  const { text, codes, caret } = buildDisplay(evaluator, { autoClose });
 
   const lines: Array<{ start: number; end: number }> = [];
   let start = 0;

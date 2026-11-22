@@ -1,10 +1,12 @@
+import { matchBrackets } from './brackets';
 import type { Evaluator } from './evaluator';
 
 /**
  * State of each displayed character: c correct, i incorrect, m required whitespace
- * that was skipped, f whitespace typed by the user, x extra typed character, p pending.
+ * that was skipped, f whitespace typed by the user, x extra typed character, p pending,
+ * a pending closing bracket that is already inserted because its opening bracket was typed.
  */
-export type DisplayCode = 'c' | 'i' | 'm' | 'f' | 'x' | 'p';
+export type DisplayCode = 'c' | 'i' | 'm' | 'f' | 'x' | 'p' | 'a';
 
 export interface Display {
   text: string;
@@ -38,7 +40,7 @@ export function ghostWhitespace(ref: string, typed: string): string {
  * whitespace and line breaks) followed by the pending reference text, which is
  * therefore laid out after the typed text instead of at its original position.
  */
-export function buildDisplay(ev: Evaluator): Display {
+export function buildDisplay(ev: Evaluator, options: { autoClose?: boolean } = {}): Display {
   const { items, text: source } = ev.target;
   const typedAt = new Map<number, Array<[string, DisplayCode]>>();
   const freeAt = new Map<number, string>();
@@ -77,11 +79,24 @@ export function buildDisplay(ev: Evaluator): Display {
   const caret = text.length;
 
   const current = items[ev.pos];
-  if (current?.kind === 'gap') {
+  if (!current) return { text, codes, caret };
+  let from = current.src;
+  if (current.kind === 'gap') {
     put(ghostWhitespace(source.slice(current.src, current.srcEnd), freeAt.get(ev.pos) ?? ''), 'p');
-    put(source.slice(current.srcEnd), 'p');
-  } else if (current) {
-    put(source.slice(current.src), 'p');
+    from = current.srcEnd;
+  }
+  const rest = text.length - from;
+  put(source.slice(from), 'p');
+  if (options.autoClose) {
+    const closed: number[] = [];
+    for (const [closer, opener] of matchBrackets(ev.target)) {
+      if (closer >= ev.pos && opener < ev.pos && ev.states[opener] === 'correct') closed.push(items[closer].src + rest);
+    }
+    if (closed.length) {
+      const list = codes.split('');
+      for (const at of closed) list[at] = 'a';
+      codes = list.join('');
+    }
   }
   return { text, codes, caret };
 }
