@@ -1,5 +1,5 @@
 import { memo, useLayoutEffect, useRef } from 'react';
-import { buildDisplay, type DisplayCode, type Evaluator } from '../../engine';
+import type { Display, DisplayCode } from '../../engine';
 
 const CLASS: Record<DisplayCode, string> = {
   c: 'ch-correct',
@@ -12,18 +12,16 @@ const CLASS: Record<DisplayCode, string> = {
 };
 
 interface Props {
-  evaluator: Evaluator;
+  display: Display;
   /** Changes on every keystroke; used to re-render. */
   version: number;
   focused: boolean;
-  /** Highlights the closing brackets that are already inserted. */
-  autoClose?: boolean;
 }
 
 /** Draws what the user typed followed by the pending code, which flows after it. */
-export function CodeView({ evaluator, version, focused, autoClose }: Props) {
+export function CodeView({ display, version, focused }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { text, codes, caret } = buildDisplay(evaluator, { autoClose });
+  const { text, codes, caret, selStart, selEnd } = display;
 
   const lines: Array<{ start: number; end: number }> = [];
   let start = 0;
@@ -43,22 +41,43 @@ export function CodeView({ evaluator, version, focused, autoClose }: Props) {
   return (
     <div className={focused ? 'code-view focused' : 'code-view'} ref={containerRef} data-testid="code-view">
       {lines.map((l, n) => (
-        <Line key={n} number={n + 1} text={text.slice(l.start, l.end)} codes={codes.slice(l.start, l.end)} caretCol={n === caretLine ? caret - l.start : -1} />
+        <Line
+          key={n}
+          number={n + 1}
+          text={text.slice(l.start, l.end)}
+          codes={codes.slice(l.start, l.end)}
+          caretCol={n === caretLine ? caret - l.start : -1}
+          selFrom={Math.max(0, selStart - l.start)}
+          selTo={Math.max(0, Math.min(l.end + 1, selEnd) - l.start)}
+        />
       ))}
     </div>
   );
 }
 
-const Line = memo(function Line({ number, text, codes, caretCol }: { number: number; text: string; codes: string; caretCol: number }) {
+interface LineProps {
+  number: number;
+  text: string;
+  codes: string;
+  caretCol: number;
+  /** Selected columns `[selFrom, selTo)`; `selTo` past the text marks the line break as selected. */
+  selFrom: number;
+  selTo: number;
+}
+
+const Line = memo(function Line({ number, text, codes, caretCol, selFrom, selTo }: LineProps) {
   const out: React.ReactNode[] = [];
+  const selected = (col: number) => col >= selFrom && col < selTo;
   let runStart = 0;
   for (let col = 0; col <= text.length; col++) {
-    if (col > runStart && (col === text.length || col === caretCol || codes[col] !== codes[runStart])) {
-      out.push(<span key={runStart} className={CLASS[codes[runStart] as DisplayCode]}>{text.slice(runStart, col)}</span>);
+    if (col > runStart && (col === text.length || col === caretCol || codes[col] !== codes[runStart] || selected(col) !== selected(runStart))) {
+      const cls = CLASS[codes[runStart] as DisplayCode] + (selected(runStart) ? ' sel' : '');
+      out.push(<span key={runStart} className={cls}>{text.slice(runStart, col)}</span>);
       runStart = col;
     }
     if (col === caretCol) out.push(<span key="caret" className="caret" />);
   }
+  if (selTo > text.length && selFrom <= text.length) out.push(<span key="eol" className="sel eol"> </span>);
   return (
     <div className={caretCol >= 0 ? 'code-line current' : 'code-line'}>
       <span className="line-no">{number}</span>

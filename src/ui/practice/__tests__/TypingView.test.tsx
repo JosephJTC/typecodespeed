@@ -57,6 +57,30 @@ describe('TypingView', () => {
     expect(lines()).toEqual(['int   main(){ return 0;', '}']);
   });
 
+  it('las flechas, Inicio, Fin y Supr editan el código en vez de mover la página', async () => {
+    const user = userEvent.setup({ delay: null });
+    const { session, input } = setup('int x = 1;\nint y;');
+    input.focus();
+    await user.keyboard('int z = 2;{Enter}int y');
+    await user.keyboard('{ArrowUp}{End}{ArrowLeft}{Backspace}1{Home}{Control>}{ArrowRight}{/Control}{ArrowRight}{Delete}x');
+    expect(session.editor.text).toBe('int x = 1;\nint y');
+    expect(session.snapshot().uncorrected).toBe(0);
+    await user.keyboard('{Control>}{End}{/Control};');
+    expect(session.snapshot().finishReason).toBe('completed');
+  });
+
+  it('Shift+flechas seleccionan y se dibuja la selección', async () => {
+    const user = userEvent.setup({ delay: null });
+    const { session, input } = setup('int value;');
+    input.focus();
+    await user.keyboard('int vlaue{Shift>}{Control>}{ArrowLeft}{/Control}{/Shift}');
+    expect(session.editor.selection).toEqual([4, 9]);
+    const selected = [...screen.getByTestId('code-view').querySelectorAll('.sel')].map((e) => e.textContent).join('');
+    expect(selected).toHaveLength(5);
+    await user.keyboard('value;');
+    expect(session.snapshot().finishReason).toBe('completed');
+  });
+
   it('una ráfaga en un solo evento input no pierde caracteres', () => {
     const { session, input } = setup('a+b;');
     act(() => {

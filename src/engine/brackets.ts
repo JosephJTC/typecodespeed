@@ -29,3 +29,16 @@ export function matchBrackets(target: Target): ReadonlyMap<number, number> {
   cache.set(target, pairs);
   return pairs;
 }
+
+const inverse = new WeakMap<Target, Map<number, number>>();
+
+/** Item index of the closing bracket matching the opening bracket at `opener`, or undefined. */
+export function closerOfOpener(target: Target, opener: number): number | undefined {
+  let map = inverse.get(target);
+  if (!map) {
+    map = new Map();
+    for (const [closer, open] of matchBrackets(target)) map.set(open, closer);
+    inverse.set(target, map);
+  }
+  return map.get(opener);
+}

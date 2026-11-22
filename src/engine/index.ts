@@ -8,9 +8,9 @@ export { TOLERANT_RULES, EXACT_RULES, DEFAULT_OPTIONS, resolveRules } from './ru
 export { buildTarget } from './target';
 export { Evaluator, evaluate } from './evaluator';
 export type { Evaluation, EvaluationCounts, TypedChar } from './evaluator';
-export { matchBrackets } from './brackets';
+export { matchBrackets, closerOfOpener } from './brackets';
 export { buildDisplay, ghostWhitespace } from './display';
-export type { Display, DisplayCode } from './display';
+export type { Display, DisplayCode, DisplayOptions, PendingChar } from './display';
 
 import { evaluate } from './evaluator';
 import { DEFAULT_OPTIONS } from './rules';

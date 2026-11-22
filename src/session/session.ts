@@ -1,8 +1,12 @@
-import { buildTarget, Evaluator, matchBrackets, type ErrorKind, type KeystrokeResult, type Target } from '../engine';
+import { buildDisplay, buildTarget, closerOfOpener, Evaluator, type Display, type ErrorKind, type KeystrokeResult, type PendingChar, type Target, type TokenType } from '../engine';
+import { CLOSER_OF, closesBefore, EditorBuffer, inLiteral, isCloser, isOpener, openerOf, type Motion } from '../editor';
 import type { FinishReason, KeystrokeLog, PauseReason, SessionConfig, SessionSnapshot, SessionStatus } from './types';
 
 const CHARS_PER_WORD = 5;
 const isWs = (ch: string) => ch === ' ' || ch === '\t' || ch === '\n';
+const isIndent = (ch: string) => ch === ' ' || ch === '\t';
+const INDENT_UNIT = '    ';
+const LITERAL_TOKENS: ReadonlySet<TokenType> = new Set<TokenType>(['string', 'char', 'comment', 'header']);
 
 interface TextStats {
   correct: number;
@@ -25,9 +29,12 @@ export interface InputResult {
 /**
  * A typing test over one text (or a chain of texts in timed tests).
  *
- * The session owns the clock, the error policy, undo groups and the keystroke
- * log; character comparison is delegated to the engine `Evaluator`. It has no
- * DOM dependency: the UI only translates key events into `input`/`backspace`.
+ * The session owns the clock, the error policy, the edited text (an
+ * `EditorBuffer` with cursor and selection) and the keystroke log. The engine
+ * `Evaluator` always holds the edited text up to the closing brackets the
+ * editor inserted ahead of the user, which are not evaluated until the user
+ * types over them or past them. It has no DOM dependency: the UI only
+ * translates key events into session calls.
  */
 export class TypingSession {
   readonly config: SessionConfig;
@@ -46,10 +53,10 @@ export class TypingSession {
   private pausedTotal = 0;
   private endAt = 0;
   private lastActivity = 0;
-  /** Number of evaluator pushes per user action, so backspace undoes a whole action (e.g. Enter + auto-indent). */
-  private groups: number[] = [];
-  /** Closing brackets typed automatically by the last action: typing them by hand is swallowed. */
-  private overtype: string[] = [];
+  /** The text being typed, with cursor and selection. */
+  readonly editor = new EditorBuffer();
+  /** Engine result of every evaluated character of `editor` (same order as the evaluator history). */
+  private results: KeystrokeResult[] = [];
   private segment = 0;
   private finishedTexts: TextStats[] = [];
   private counters = { typed: 0, correct: 0, errors: 0, corrections: 0 };
@@ -100,58 +107,109 @@ export class TypingSession {
     return res;
   }
 
-  /** Tab: types the indentation expected at the cursor, or a tab character. */
+  /** Tab: at the end of the text, types the indentation expected there; otherwise a tab character. */
   tab(): InputResult {
     const items = this.target.items;
-    const item = items[this.evaluator.pos];
-    if (!item || item.kind !== 'char' || (item.ch !== ' ' && item.ch !== '\t')) return this.input('\t');
+    const isWsItem = (i: number) => {
+      const it = items[i];
+      return it?.kind === 'char' && isIndent(it.ch);
+    };
+    if (!this.atFrontier() || !isWsItem(this.evaluator.pos)) return this.input('\t');
     if (!this.beginAction()) return { accepted: 0, rejected: 0, ignored: 1 };
-    let pushed = 0;
-    while (true) {
-      const it = items[this.evaluator.pos];
-      if (!it || it.kind !== 'char' || (it.ch !== ' ' && it.ch !== '\t')) break;
-      this.record('char', it.ch, this.evaluator.push(it.ch), pushed > 0);
-      pushed++;
+    let n = 0;
+    while (isWsItem(this.evaluator.pos)) {
+      const ch = (items[this.evaluator.pos] as { ch: string }).ch;
+      this.editor.insert(ch, n > 0);
+      this.sync();
+      this.record('char', ch, this.results[this.editor.cursor - 1], n > 0);
+      n++;
     }
-    this.overtype = [];
-    pushed += this.closeBrackets();
-    this.groups.push(pushed);
     this.afterAction();
     this.emit();
-    return { accepted: pushed, rejected: 0, ignored: 0 };
+    return { accepted: n, rejected: 0, ignored: 0 };
   }
 
-  /** Undoes the last action. Returns false when there is nothing to undo. */
+  /**
+   * Deletes the selection or the character before the cursor. Inside an empty
+   * pair whose closing bracket the editor inserted, deletes both; right after
+   * an automatic indentation, deletes it together with its line break.
+   */
   backspace(): boolean {
-    const ok = this.undoOne('backspace');
-    this.emit();
-    return ok;
+    return this.edit('backspace', () => {
+      const ed = this.editor;
+      if (ed.deleteSelection()) return true;
+      const c = ed.cursor;
+      if (c === 0) return false;
+      const prev = ed.cells[c - 1];
+      const next = ed.cells[c];
+      if (next?.ahead && isOpener(prev.ch) && next.ch === CLOSER_OF[prev.ch]) {
+        ed.delete(c - 1, c + 1);
+        return true;
+      }
+      let j = c;
+      while (j > 0 && ed.cells[j - 1].auto && !ed.cells[j - 1].ahead && isIndent(ed.cells[j - 1].ch)) j--;
+      ed.delete(j < c && j > 0 && ed.cells[j - 1].ch === '\n' ? j - 1 : c - 1, c);
+      // Undo the split of `{|}` made by Enter.
+      const at = ed.cursor;
+      const before = ed.cells[at - 1]?.ch;
+      if (isOpener(before) && ed.cells[at]?.ahead && ed.cells[at].ch === '\n') {
+        const k = this.aheadCloser(CLOSER_OF[before]);
+        if (k >= 0) ed.delete(at, k);
+      }
+      return true;
+    });
   }
 
-  /** Ctrl+Backspace: undoes back to the start of the current (or previous) token. */
+  /** Ctrl+Backspace: deletes the selection or back to the start of the previous word or symbol run. */
   wordBackspace(): boolean {
-    if (this._status === 'finished' || this.groups.length === 0) return false;
-    const items = this.target.items;
-    const tokenAt = (pos: number) => {
-      const it = items[pos];
-      return it && it.kind === 'char' ? it.token : -2;
-    };
-    // Skip whitespace and gaps, then remove characters of a single token.
-    while (this.groups.length && tokenAt(this.evaluator.pos - 1) < 0 && this.evaluator.extras[this.evaluator.pos] === 0) {
-      if (!this.undoOne('wordBackspace', true)) break;
-    }
-    const token = tokenAt(this.evaluator.pos - 1);
-    while (this.groups.length) {
-      if (this.evaluator.extras[this.evaluator.pos] > 0) {
-        this.undoOne('wordBackspace', true);
-        continue;
-      }
-      if (token < 0 || tokenAt(this.evaluator.pos - 1) !== token) break;
-      this.undoOne('wordBackspace', true);
-    }
-    this.counters.corrections++;
+    return this.edit('wordBackspace', () => {
+      const ed = this.editor;
+      if (ed.deleteSelection()) return true;
+      if (ed.cursor === 0) return false;
+      ed.delete(ed.wordLeft(ed.cursor), ed.cursor);
+      return true;
+    });
+  }
+
+  /** Delete: deletes the selection or the character after the cursor. */
+  deleteForward(): boolean {
+    return this.edit('delete', () => {
+      const ed = this.editor;
+      if (ed.deleteSelection()) return true;
+      if (ed.cursor >= ed.length) return false;
+      ed.delete(ed.cursor, ed.cursor + 1);
+      return true;
+    });
+  }
+
+  /** Ctrl+Delete: deletes the selection or up to the end of the next word or symbol run. */
+  wordDelete(): boolean {
+    return this.edit('wordDelete', () => {
+      const ed = this.editor;
+      if (ed.deleteSelection()) return true;
+      if (ed.cursor >= ed.length) return false;
+      ed.delete(ed.cursor, ed.wordRight(ed.cursor));
+      return true;
+    });
+  }
+
+  /** Moves the cursor (extending the selection with Shift). Does not start the clock. */
+  move(motion: Motion, extend = false): void {
+    if (this._status === 'finished') return;
+    this.editor.move(motion, extend);
     this.emit();
-    return true;
+  }
+
+  selectAll(): void {
+    if (this._status === 'finished') return;
+    this.editor.selectAll();
+    this.emit();
+  }
+
+  /** What to draw: the edited text, the inserted brackets and the pending code, with cursor and selection. */
+  display(): Display {
+    const ed = this.editor;
+    return buildDisplay(this.evaluator, { pending: this.pendingChars(), cursor: ed.cursor, anchor: ed.anchor });
   }
 
   pause(reason: PauseReason = 'user'): void {
@@ -239,7 +297,7 @@ export class TypingSession {
     const lines = text.length === 0 ? 1 : text.split('\n').length;
 
     const doneChars = counts.total - counts.remaining;
-    const sessionCorrect = this.finishedTexts.reduce((a, s) => a + s.correct, 0) + counts.correct;
+    const sessionCorrect = this.finishedTexts.reduce((a, s) => a + s.correct, 0) + this.typedCorrect();
     const evaluated = this.counters.correct + this.counters.errors;
     const timeLimit = this.config.timeLimitMs;
     return {
@@ -308,115 +366,166 @@ export class TypingSession {
     else this.finish('completed');
   }
 
-  private typeChar(ch: string): boolean {
-    const ev = this.evaluator;
-    if (this.overtype[0] === ch) {
-      this.overtype.shift();
-      return true;
-    }
-    this.overtype = [];
-    if (this.config.errorPolicy === 'block') {
-      const preview = ev.peek(ch);
-      if (preview.status === 'error') {
-        this.record('char', ch, preview, false, true);
-        return false;
-      }
-    }
-    const result = ev.push(ch);
-    this.record('char', ch, result);
-    let pushed = 1;
-    if (ch === '\n' && result.status !== 'error' && this.config.autoIndent) {
-      const items = this.target.items;
-      while (true) {
-        const it = items[ev.pos];
-        if (!it || it.kind !== 'char' || (it.ch !== ' ' && it.ch !== '\t')) break;
-        this.record('char', it.ch, ev.push(it.ch), true);
-        pushed++;
-      }
-      if (result.status === 'free') pushed += this.indentLine();
-    }
-    pushed += this.closeBrackets();
-    this.groups.push(pushed);
-    return true;
-  }
-
-  /** Index of the next item that is not whitespace, starting at the cursor. */
-  private nextCodeItem(): number {
-    const items = this.target.items;
-    let i = this.evaluator.pos;
-    while (i < items.length) {
-      const it = items[i];
-      if (it.kind === 'char' && !isWs(it.ch)) break;
-      i++;
-    }
+  /** Offset of the first character inserted ahead of the user (not evaluated yet). */
+  private pendingStart(): number {
+    const cells = this.editor.cells;
+    let i = cells.length;
+    while (i > 0 && cells[i - 1].ahead) i--;
     return i;
   }
 
-  /** Types `text` as automatic whitespace while the engine accepts it; returns the number of characters typed. */
-  private autoWhitespace(text: string): number {
-    let n = 0;
-    for (const ch of text) {
-      if (this.evaluator.peek(ch).status === 'error') break;
-      this.record('char', ch, this.evaluator.push(ch), true);
-      n++;
+  /** Offset of the inserted closing bracket `ch` right after the cursor (past inserted line breaks), or -1. */
+  private aheadCloser(ch: string): number {
+    const cells = this.editor.cells;
+    let j = this.editor.cursor;
+    while (cells[j]?.ahead && isWs(cells[j].ch)) j++;
+    return cells[j]?.ahead && cells[j].ch === ch ? j : -1;
+  }
+
+  private atFrontier(): boolean {
+    return !this.editor.hasSelection && this.editor.cursor === this.pendingStart();
+  }
+
+  /** Brings the evaluator in line with the edited text, re-evaluating only from the first change. */
+  private sync(): void {
+    const from = this.editor.takeDirty();
+    const end = this.pendingStart();
+    const keep = Math.min(from, end, this.results.length);
+    while (this.results.length > keep) {
+      this.evaluator.pop();
+      this.results.pop();
     }
-    return n;
+    const cells = this.editor.cells;
+    for (let i = keep; i < end; i++) this.results.push(this.evaluator.push(cells[i].ch));
   }
 
-  /** After a line break typed in a flexible gap: indents the new line like the reference line of the next token. */
-  private indentLine(): number {
-    const { items, text } = this.target;
-    const next = items[this.nextCodeItem()];
-    const src = next ? next.src : text.length;
-    const lineStart = text.lastIndexOf('\n', src - 1) + 1;
-    return this.autoWhitespace(/^[ \t]*/.exec(text.slice(lineStart, src))![0]);
-  }
-
-  /**
-   * Editor-style bracket pairs: when the next token is the closing bracket of a
-   * correctly typed opening bracket, types it (with the reference whitespace
-   * before it). Returns the number of characters typed.
-   */
-  private closeBrackets(): number {
-    if (!this.config.autoClose) return 0;
-    const ev = this.evaluator;
-    const { items, text } = this.target;
-    const pairs = matchBrackets(this.target);
-    let total = 0;
-    for (;;) {
-      const at = this.nextCodeItem();
-      const closer = items[at];
-      const opener = pairs.get(at);
-      if (!closer || closer.kind !== 'char' || opener === undefined || ev.states[opener] !== 'correct') break;
-      const here = items[ev.pos];
-      // Whitespace the user already typed in the current gap is kept as is.
-      const from = here.kind === 'gap' && ev.gapTyped > 0 ? here.srcEnd : here.src;
-      const logged = this.log.length;
-      const n = this.autoWhitespace(text.slice(from, closer.src));
-      const preview = ev.peek(closer.ch);
-      if (preview.status !== 'correct' || preview.item !== at) {
-        for (let i = 0; i < n; i++) ev.pop();
-        this.log.length = logged;
-        break;
+  private typeChar(ch: string): boolean {
+    const ed = this.editor;
+    const saved = this.config.errorPolicy === 'block' ? ed.save() : null;
+    const frontier = this.atFrontier();
+    const [from, to] = ed.selection;
+    const closer = !ed.hasSelection && isCloser(ch) ? this.aheadCloser(ch) : -1;
+    if (closer >= 0) {
+      // Type over the closing bracket the editor inserted (dropping the line break it had to itself).
+      ed.delete(ed.cursor, closer);
+      ed.markTyped(ed.cursor);
+      ed.setCursor(ed.cursor + 1);
+    } else if (this.config.autoClose && isOpener(ch) && closesBefore(ed.cells[to]?.ch) && !inLiteral(ed.text, from)) {
+      ed.insert(ch);
+      ed.insertAt(ed.cursor, CLOSER_OF[ch], 'ahead');
+    } else {
+      ed.insert(ch);
+    }
+    this.sync();
+    const result = this.results[ed.cursor - 1];
+    if (saved && result.status === 'error') {
+      ed.restore(saved);
+      this.sync();
+      this.record('char', ch, result, false, true);
+      return false;
+    }
+    this.record('char', ch, result);
+    if (ch === '\n' && result.status !== 'error' && this.config.autoIndent) {
+      const opener = ed.cursor - 2;
+      const split = ed.cells[ed.cursor]?.ahead && ed.cells[ed.cursor].ch === CLOSER_OF[ed.cells[opener]?.ch];
+      if (frontier) this.indentFromReference(result);
+      else this.indentLikeEditor();
+      if (split) {
+        // As in an editor, `{|}` + Enter leaves the closing bracket on its own line.
+        const start = ed.lineStart(opener);
+        let end = start;
+        while (isIndent(ed.cells[end].ch)) end++;
+        ed.insertAt(ed.cursor, '\n' + ed.text.slice(start, end), 'ahead');
       }
-      this.record('char', closer.ch, ev.push(closer.ch), true);
-      this.overtype.push(closer.ch);
-      total += n + 1;
     }
-    return total;
+    return true;
   }
 
-  private undoOne(kind: 'backspace' | 'wordBackspace', silent = false): boolean {
+  /** At the end of the text: indents the new line as the reference does. */
+  private indentFromReference(newline: KeystrokeResult): void {
+    const { items, text } = this.target;
+    const ev = this.evaluator;
+    let indent = '';
+    if (items[ev.pos]?.kind === 'char') {
+      for (let i = ev.pos; items[i]?.kind === 'char' && isIndent((items[i] as { ch: string }).ch); i++) indent += (items[i] as { ch: string }).ch;
+    } else if (newline.status === 'free') {
+      let i = ev.pos;
+      while (i < items.length && !(items[i].kind === 'char' && !isWs((items[i] as { ch: string }).ch))) i++;
+      const src = items[i] ? items[i].src : text.length;
+      indent = /^[ \t]*/.exec(text.slice(text.lastIndexOf('\n', src - 1) + 1, src))![0];
+    }
+    for (const ch of indent) {
+      if (ev.peek(ch).status === 'error') break;
+      this.editor.insert(ch, true);
+      this.sync();
+      this.record('char', ch, this.results[this.editor.cursor - 1], true);
+    }
+  }
+
+  /** Inside the text: keeps the indentation of the previous line, one level deeper after `{`. */
+  private indentLikeEditor(): void {
+    const ed = this.editor;
+    const nl = ed.cursor - 1;
+    const start = ed.lineStart(nl);
+    let end = start;
+    while (end < nl && isIndent(ed.cells[end].ch)) end++;
+    let indent = ed.text.slice(start, end);
+    let last = nl - 1;
+    while (last >= start && isIndent(ed.cells[last].ch)) last--;
+    if (last >= start && isOpener(ed.cells[last].ch)) indent += indent.includes('\t') ? '\t' : INDENT_UNIT;
+    if (!indent) return;
+    ed.insert(indent, true);
+    this.sync();
+  }
+
+  /** Runs a deletion; returns false (and records nothing) when there was nothing to delete. */
+  private edit(kind: 'backspace' | 'wordBackspace' | 'delete' | 'wordDelete', apply: () => boolean): boolean {
     if (this._status === 'finished') return false;
-    const n = this.groups.pop();
-    if (n === undefined) return false;
+    if (!apply()) return false;
     if (this._status === 'paused') this.resume();
-    for (let i = 0; i < n; i++) this.evaluator.pop();
-    this.overtype = [];
-    if (!silent) this.counters.corrections++;
+    this.sync();
+    this.counters.corrections++;
     this.log.push({ t: this.elapsed(), kind, status: 'undo', segment: this.segment });
     this.lastActivity = this.now();
+    this.afterAction();
+    this.emit();
     return true;
+  }
+
+  /** Closing brackets inserted ahead of the user, with the target item each one stands for. */
+  private pendingChars(): PendingChar[] {
+    const cells = this.editor.cells;
+    const start = this.pendingStart();
+    if (start === cells.length) return [];
+    const items = this.target.items;
+    const open: number[] = [];
+    for (let i = 0; i < start; i++) {
+      const r = this.results[i];
+      const it = items[r.item];
+      if (it?.kind === 'char' && LITERAL_TOKENS.has(it.tokenType)) continue;
+      const ch = cells[i].ch;
+      if (isOpener(ch)) open.push(i);
+      else if (isCloser(ch) && cells[open[open.length - 1]]?.ch === openerOf(ch)) open.pop();
+    }
+    let j = 0;
+    return cells.slice(start).map((cell) => {
+      if (!isCloser(cell.ch)) return { ch: cell.ch, item: -1 };
+      const o = open[open.length - 1 - j++];
+      const r = o === undefined ? undefined : this.results[o];
+      const closer = r && r.status === 'correct' ? closerOfOpener(this.target, r.item) : undefined;
+      const it = closer === undefined ? undefined : items[closer];
+      return { ch: cell.ch, item: it?.kind === 'char' && it.ch === cell.ch ? closer! : -1 };
+    });
+  }
+
+  /** Correct characters of the current text that the user typed (not inserted by the editor). */
+  private typedCorrect(): number {
+    let n = 0;
+    const items = this.target.items;
+    this.results.forEach((r, i) => {
+      if (r.status === 'correct' && !this.editor.cells[i].auto && items[r.item]?.kind === 'char') n++;
+    });
+    return n;
   }
 
   private record(kind: 'char', ch: string, r: KeystrokeResult, auto = false, rejected = false) {
@@ -474,19 +583,20 @@ export class TypingSession {
     const counts = this.evaluator.getCounts();
     const tokens = this.tokenStats();
     this.finishedTexts.push({
-      correct: counts.correct,
+      correct: this.typedCorrect(),
       total: counts.total,
       uncorrected: counts.incorrect + counts.missed + counts.extra,
       tokensTotal: this.tokenRanges.size,
       tokensCorrect: tokens.correct,
     });
     this.segment++;
-    this.overtype = [];
     const text = this.config.nextText!();
     this.texts.push(text);
     this.target = buildTarget(text, this.config.language, this.config.compare);
     this.evaluator = new Evaluator(this.target);
-    this.groups = [];
+    this.editor.reset();
+    this.editor.takeDirty();
+    this.results = [];
     this.indexTokens();
   }
 

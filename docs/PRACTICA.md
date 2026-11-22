@@ -37,10 +37,12 @@ La vista no dibuja la referencia en una posición fija: muestra lo que realmente
 - **Cronómetro:** empieza con la primera tecla. Solo cuenta el tiempo activo.
 - **Pausa:** Esc pausa o continúa; perder el foco pausa; la pausa por inactividad (configurable) descuenta el tiempo inactivo. Escribir mientras está en pausa reanuda y la tecla se procesa (no se pierde).
 - **Errores:** *avanzar* marca el error y continúa; *bloquear* rechaza la tecla hasta que se escriba la correcta.
-- **Retroceso:** deshace la última acción (una tecla y lo que insertó automáticamente, sea indentación o cierres, se deshacen juntos). Ctrl+Retroceso borra el token actual.
-- **Indentación automática:** al presionar Enter, la línea nueva queda indentada como la línea de la referencia donde está el siguiente token. Tab completa la indentación esperada en los modos donde es exacta. Se puede desactivar en Ajustes.
-- **Cierre automático:** cuando escribes bien `(`, `[` o `{`, su cierre queda insertado (se ve más claro que el resto del código pendiente). Al llegar a él se escribe solo, junto con el salto y la indentación que lo preceden en la referencia. Si lo escribes a mano por costumbre, la tecla se ignora: no duplica el cierre ni cuenta como error. No aplica dentro de cadenas, caracteres ni comentarios, ni cuando la apertura se escribió mal. Se puede desactivar en Ajustes.
-- **Métricas:** WPM = caracteres correctos / 5 por minuto; WPM bruto cuenta todas las teclas; la precisión cuenta también los errores corregidos o rechazados. Las teclas automáticas no cuentan como pulsaciones ni para la precisión, pero los cierres insertados sí cuentan como caracteres correctos del texto, así que suben un poco el WPM neto.
+- **Edición libre:** el cursor se mueve dentro del código como en un editor: flechas, Inicio/Fin (Inicio va primero al primer carácter no blanco), Ctrl+Inicio/Fin, Ctrl+flechas por palabras o grupos de símbolos, y Shift para seleccionar. Se puede corregir cualquier carácter anterior; el motor vuelve a comparar desde el punto editado. Moverse no inicia el cronómetro ni cuenta como pulsación.
+- **Borrar:** Retroceso y Supr borran un carácter o la selección; Ctrl+Retroceso y Ctrl+Supr, una palabra. Retroceso justo después de una indentación automática la borra junto con su salto. Cada borrado cuenta como una corrección.
+- **Indentación automática:** al presionar Enter al final del texto, la línea nueva queda indentada como la línea de la referencia donde está el siguiente token; a media línea conserva la indentación de la línea y la aumenta tras `{`. Tab completa la indentación esperada en los modos donde es exacta. Se puede desactivar en Ajustes.
+- **Cierre automático:** al escribir `(`, `[` o `{` se inserta su cierre de inmediato y el cursor queda en medio. Escribir ese cierre avanza sobre él sin duplicarlo. Enter entre `{}` deja la llave de cierre en su propia línea. Retroceso en un par vacío borra los dos; con contenido dentro, borra normal. No aplica dentro de cadenas, caracteres ni comentarios, ni antes de un identificador o número. Se puede desactivar en Ajustes.
+- **Progreso de los cierres:** un cierre insertado que todavía no escribiste encima ni pasaste no se compara: no cuenta como progreso, pulsación ni carácter correcto, y se dibuja en su lugar dentro del código pendiente. Si escribes después de él, pasa a ser parte del texto comparado.
+- **Métricas:** WPM = caracteres correctos escritos por ti / 5 por minuto; WPM bruto cuenta todas las teclas; la precisión cuenta también los errores corregidos o rechazados. Lo que inserta la aplicación (indentación y cierres) no cuenta como pulsación, acierto ni para la precisión.
 - **Captura de teclado:** los caracteres llegan por el evento `input` de un textarea oculto, así que una ráfaga de teclas, las teclas muertas y los IME no pierden caracteres. Pegar está deshabilitado.
 
 ## Atajos
@@ -50,5 +52,10 @@ La vista no dibuja la referencia en una posición fija: muestra lo que realmente
 | Esc | Pausar / continuar |
 | Ctrl+Enter | Reiniciar |
 | Ctrl+Shift+Enter | Otro fragmento |
-| Ctrl+Retroceso | Borrar el token actual |
+| Flechas, Inicio, Fin | Mover el cursor |
+| Ctrl+flechas | Moverse por palabras |
+| Shift + movimiento | Seleccionar |
+| Ctrl+A | Seleccionar todo |
+| Retroceso / Supr | Borrar un carácter o la selección |
+| Ctrl+Retroceso / Ctrl+Supr | Borrar una palabra |
 | Tab | Completar la indentación |

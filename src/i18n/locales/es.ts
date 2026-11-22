@@ -97,7 +97,7 @@ export const es = {
     start: 'Comenzar',
     startHint: 'Presiona Enter para comenzar.',
     typingHint: 'Empieza a escribir para iniciar el cronómetro.',
-    shortcuts: 'Esc: pausar o continuar · Ctrl+Enter: reiniciar · Ctrl+Retroceso: borrar token · Tab: indentación',
+    shortcuts: 'Esc: pausar o continuar · Ctrl+Enter: reiniciar · Flechas: mover el cursor · Ctrl+Retroceso: borrar palabra · Tab: indentación',
     paused: {
       user: 'En pausa. Presiona Esc o sigue escribiendo para continuar.',
       idle: 'En pausa por inactividad. Sigue escribiendo para continuar.',

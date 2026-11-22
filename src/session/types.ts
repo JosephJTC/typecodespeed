@@ -22,8 +22,8 @@ export interface SessionConfig {
   /** After an accepted line break, type the indentation of the line, as an editor does. */
   autoIndent: boolean;
   /**
-   * Editor-style bracket pairs: once `(`, `[` or `{` is typed correctly, its closing
-   * bracket is typed automatically when the cursor reaches it (typing it anyway is harmless).
+   * Editor-style bracket pairs: typing `(`, `[` or `{` (outside strings and comments)
+   * inserts its closing bracket after the cursor; typing that bracket types over it.
    */
   autoClose?: boolean;
   /** Pauses the clock after this much inactivity (the idle time is not counted). 0 disables it. */
@@ -32,7 +32,7 @@ export interface SessionConfig {
   now?: () => number;
 }
 
-export type KeystrokeKind = 'char' | 'backspace' | 'wordBackspace';
+export type KeystrokeKind = 'char' | 'backspace' | 'wordBackspace' | 'delete' | 'wordDelete';
 
 export interface KeystrokeLog {
   /** Active time (ms since the start, pauses excluded). */
