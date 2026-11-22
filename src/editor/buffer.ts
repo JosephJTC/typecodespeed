@@ -3,6 +3,8 @@ export interface Cell {
   ch: string;
   /** Inserted by the editor (auto-indentation, closing bracket), not typed by the user. */
   auto: boolean;
+  /** Inserted ahead of the cursor (a closing bracket and the line break before it); not compared until typed over or past. */
+  ahead?: boolean;
 }
 
 export type Motion = 'left' | 'right' | 'up' | 'down' | 'home' | 'end' | 'wordLeft' | 'wordRight' | 'docStart' | 'docEnd';
@@ -54,14 +56,14 @@ export class EditorBuffer {
   /** Replaces the selection with `text` and leaves the cursor after it. */
   insert(text: string, auto = false): void {
     this.deleteSelection();
-    this.insertAt(this.cursor, text, auto);
+    this.insertAt(this.cursor, text, auto ? 'auto' : 'user');
     this.setCursor(this.cursor + text.length);
   }
 
   /** Inserts `text` at `pos` without moving the cursor unless it is after `pos`. */
-  insertAt(pos: number, text: string, auto = false): void {
+  insertAt(pos: number, text: string, kind: 'user' | 'auto' | 'ahead' = 'user'): void {
     if (!text) return;
-    this.cells.splice(pos, 0, ...Array.from(text, (ch) => ({ ch, auto })));
+    this.cells.splice(pos, 0, ...Array.from(text, (ch): Cell => (kind === 'ahead' ? { ch, auto: true, ahead: true } : { ch, auto: kind === 'auto' })));
     this.touch(pos);
     if (this.cursor > pos) this.cursor += text.length;
     if (this.anchor > pos) this.anchor += text.length;
@@ -93,6 +95,7 @@ export class EditorBuffer {
     const cell = this.cells[pos];
     if (!cell?.auto) return;
     cell.auto = false;
+    cell.ahead = false;
     this.touch(pos);
   }
 

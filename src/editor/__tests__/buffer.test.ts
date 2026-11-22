@@ -21,7 +21,7 @@ describe('EditorBuffer', () => {
 
   it('insertAt no mueve un cursor anterior', () => {
     const b = buf('f(', 2);
-    b.insertAt(2, ')', true);
+    b.insertAt(2, ')', 'ahead');
     expect(b.text).toBe('f()');
     expect(b.cursor).toBe(2);
     expect(b.cells[2].auto).toBe(true);

@@ -142,13 +142,20 @@ export class TypingSession {
       if (c === 0) return false;
       const prev = ed.cells[c - 1];
       const next = ed.cells[c];
-      if (next?.auto && isOpener(prev.ch) && next.ch === CLOSER_OF[prev.ch]) {
+      if (next?.ahead && isOpener(prev.ch) && next.ch === CLOSER_OF[prev.ch]) {
         ed.delete(c - 1, c + 1);
         return true;
       }
       let j = c;
-      while (j > 0 && ed.cells[j - 1].auto && isIndent(ed.cells[j - 1].ch)) j--;
+      while (j > 0 && ed.cells[j - 1].auto && !ed.cells[j - 1].ahead && isIndent(ed.cells[j - 1].ch)) j--;
       ed.delete(j < c && j > 0 && ed.cells[j - 1].ch === '\n' ? j - 1 : c - 1, c);
+      // Undo the split of `{|}` made by Enter.
+      const at = ed.cursor;
+      const before = ed.cells[at - 1]?.ch;
+      if (isOpener(before) && ed.cells[at]?.ahead && ed.cells[at].ch === '\n') {
+        const k = this.aheadCloser(CLOSER_OF[before]);
+        if (k >= 0) ed.delete(at, k);
+      }
       return true;
     });
   }
@@ -359,12 +366,20 @@ export class TypingSession {
     else this.finish('completed');
   }
 
-  /** Offset of the first closing bracket inserted ahead of the user (not evaluated yet). */
+  /** Offset of the first character inserted ahead of the user (not evaluated yet). */
   private pendingStart(): number {
     const cells = this.editor.cells;
     let i = cells.length;
-    while (i > 0 && cells[i - 1].auto && isCloser(cells[i - 1].ch)) i--;
+    while (i > 0 && cells[i - 1].ahead) i--;
     return i;
+  }
+
+  /** Offset of the inserted closing bracket `ch` right after the cursor (past inserted line breaks), or -1. */
+  private aheadCloser(ch: string): number {
+    const cells = this.editor.cells;
+    let j = this.editor.cursor;
+    while (cells[j]?.ahead && isWs(cells[j].ch)) j++;
+    return cells[j]?.ahead && cells[j].ch === ch ? j : -1;
   }
 
   private atFrontier(): boolean {
@@ -389,13 +404,15 @@ export class TypingSession {
     const saved = this.config.errorPolicy === 'block' ? ed.save() : null;
     const frontier = this.atFrontier();
     const [from, to] = ed.selection;
-    if (!ed.hasSelection && isCloser(ch) && ed.cells[ed.cursor]?.ch === ch && ed.cells[ed.cursor].auto) {
-      // Type over the closing bracket the editor inserted.
+    const closer = !ed.hasSelection && isCloser(ch) ? this.aheadCloser(ch) : -1;
+    if (closer >= 0) {
+      // Type over the closing bracket the editor inserted (dropping the line break it had to itself).
+      ed.delete(ed.cursor, closer);
       ed.markTyped(ed.cursor);
       ed.setCursor(ed.cursor + 1);
     } else if (this.config.autoClose && isOpener(ch) && closesBefore(ed.cells[to]?.ch) && !inLiteral(ed.text, from)) {
       ed.insert(ch);
-      ed.insertAt(ed.cursor, CLOSER_OF[ch], true);
+      ed.insertAt(ed.cursor, CLOSER_OF[ch], 'ahead');
     } else {
       ed.insert(ch);
     }
@@ -409,8 +426,17 @@ export class TypingSession {
     }
     this.record('char', ch, result);
     if (ch === '\n' && result.status !== 'error' && this.config.autoIndent) {
+      const opener = ed.cursor - 2;
+      const split = ed.cells[ed.cursor]?.ahead && ed.cells[ed.cursor].ch === CLOSER_OF[ed.cells[opener]?.ch];
       if (frontier) this.indentFromReference(result);
       else this.indentLikeEditor();
+      if (split) {
+        // As in an editor, `{|}` + Enter leaves the closing bracket on its own line.
+        const start = ed.lineStart(opener);
+        let end = start;
+        while (isIndent(ed.cells[end].ch)) end++;
+        ed.insertAt(ed.cursor, '\n' + ed.text.slice(start, end), 'ahead');
+      }
     }
     return true;
   }
@@ -481,8 +507,10 @@ export class TypingSession {
       if (isOpener(ch)) open.push(i);
       else if (isCloser(ch) && cells[open[open.length - 1]]?.ch === openerOf(ch)) open.pop();
     }
-    return cells.slice(start).map((cell, j) => {
-      const o = open[open.length - 1 - j];
+    let j = 0;
+    return cells.slice(start).map((cell) => {
+      if (!isCloser(cell.ch)) return { ch: cell.ch, item: -1 };
+      const o = open[open.length - 1 - j++];
       const r = o === undefined ? undefined : this.results[o];
       const closer = r && r.status === 'correct' ? closerOfOpener(this.target, r.item) : undefined;
       const it = closer === undefined ? undefined : items[closer];

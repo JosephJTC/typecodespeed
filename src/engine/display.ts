@@ -18,7 +18,7 @@ export interface Display {
   selEnd: number;
 }
 
-/** A closing bracket inserted by the editor after the evaluated text, not evaluated yet. */
+/** A character inserted by the editor after the evaluated text (a closing bracket or the line break before it), not evaluated yet. Whitespace is not drawn. */
 export interface PendingChar {
   ch: string;
   /** Target item it stands for (drawn there, inside the pending code), or -1. */
@@ -104,7 +104,8 @@ export function buildDisplay(ev: Evaluator, options: DisplayOptions = {}): Displ
 
   const current = items[ev.pos];
   const inGhost = (p: PendingChar) => current !== undefined && p.item >= ev.pos && items[p.item]?.kind === 'char';
-  for (const p of pending) if (!inGhost(p)) put(p.ch, 'a');
+  const hidden = (p: PendingChar) => p.ch === ' ' || p.ch === '\t' || p.ch === '\n';
+  for (const p of pending) if (!inGhost(p) && !hidden(p)) put(p.ch, 'a');
 
   const pendingAt: number[] = [];
   if (current) {
@@ -126,7 +127,7 @@ export function buildDisplay(ev: Evaluator, options: DisplayOptions = {}): Displ
   }
   let inline = frontier;
   let ghost = 0;
-  for (const p of pending) offsets.push(inGhost(p) ? pendingAt[ghost++] : inline++);
+  for (const p of pending) offsets.push(inGhost(p) ? pendingAt[ghost++] : hidden(p) ? inline : inline++);
 
   const edited = offsets.length;
   const at = (pos: number) => {

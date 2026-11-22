@@ -163,7 +163,7 @@ describe('edición con cursor libre', () => {
       else s.move('wordLeft');
       const ed = s.editor;
       let end = ed.length;
-      while (end > 0 && ed.cells[end - 1].auto && ')]}'.includes(ed.cells[end - 1].ch)) end--;
+      while (end > 0 && ed.cells[end - 1].ahead) end--;
       const expected = evaluate(s.target, ed.text.slice(0, end));
       expect(s.evaluator.pos).toBe(expected.pos);
     }

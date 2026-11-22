@@ -125,6 +125,29 @@ describe('cierre automático de paréntesis, corchetes y llaves', () => {
     expect(s.snapshot().uncorrected).toBe(0);
   });
 
+  it('Enter entre llaves deja el cierre en su propia línea', () => {
+    const s = make('if (x) {\n    a();\n}');
+    s.input('if (x) {\n');
+    expect(text(s)).toBe('if (x) {\n    \n}');
+    expect(typed(s)).toBe('if (x) {\n    ');
+    s.input('a();');
+    s.move('end');
+    expect(s.editor.cursor).toBe('if (x) {\n    a();'.length);
+    s.input('\n}');
+    expect(text(s)).toBe('if (x) {\n    a();\n}');
+    expect(s.snapshot().finishReason).toBe('completed');
+    expect(s.snapshot().errorsMade).toBe(0);
+  });
+
+  it('retroceso tras Enter entre llaves vuelve a juntar el par', () => {
+    const s = make('if (x) {\n    a();\n}');
+    s.input('if (x) {\n');
+    s.backspace();
+    expect(text(s)).toBe('if (x) {}');
+    s.backspace();
+    expect(text(s)).toBe('if (x) ');
+  });
+
   it('retroceso en un par vacío autogenerado borra ambos', () => {
     const s = make('f();');
     s.input('f(');
