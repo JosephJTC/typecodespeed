@@ -129,7 +129,8 @@ export class Evaluator {
           this.leaveGap('satisfied');
           continue;
         }
-        const kind: ErrorKind = item.requireNewline && !this.gapNewline ? 'missingNewline' : 'missingSeparator';
+        const kind: ErrorKind =
+          item.requireNewline && !this.gapNewline ? 'missingNewline' : item.reason === 'separator' ? 'missingSeparator' : 'missingWhitespace';
         this.leaveGap('missed');
         return this.matchAfterMissing(ch, kind);
       }

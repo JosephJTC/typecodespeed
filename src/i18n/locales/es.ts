@@ -47,8 +47,15 @@ export const es = {
     result: 'Resultado',
     equivalent: 'Equivalente: sin errores y completo',
     notEquivalent: 'No equivalente',
-    incomplete: 'Incompleto: faltan {count} caracteres',
-    stats: '{correct} de {total} caracteres correctos · {errors} errores',
+    incomplete: {
+      one: 'Incompleto: falta {count} carácter',
+      other: 'Incompleto: faltan {count} caracteres',
+    },
+    stats: '{correct} de {total} caracteres correctos · {errors}',
+    errorCount: {
+      one: '{count} error',
+      other: '{count} errores',
+    },
     errorList: 'Errores detectados',
     noErrors: 'No hay errores.',
     errorAt: 'Línea {line}, columna {column}: {message}',

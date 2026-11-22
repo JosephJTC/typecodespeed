@@ -32,6 +32,21 @@ export function t(key: MessageKey, params?: Record<string, string | number>): st
   return text;
 }
 
+type PluralKey<T, P extends string = ''> = {
+  [K in keyof T & string]: T[K] extends { one: string; other: string }
+    ? `${P}${K}`
+    : T[K] extends string
+      ? never
+      : PluralKey<T[K], `${P}${K}.`>;
+}[keyof T & string];
+export type PluralMessageKey = PluralKey<Messages>;
+
+/** Traduce una clave con formas `one`/`other` según `count` (disponible como `{count}`). */
+export function tp(key: PluralMessageKey, count: number, params?: Record<string, string | number>): string {
+  const form = new Intl.PluralRules(intlLocales[current]).select(count) === 'one' ? 'one' : 'other';
+  return t(`${key}.${form}` as MessageKey, { ...params, count });
+}
+
 function formatNumber(value: string | number): string {
   return typeof value === 'number' ? new Intl.NumberFormat(intlLocales[current]).format(value) : value;
 }

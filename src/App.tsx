@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { buildTarget, evaluate, type CompareOptions, type ComparisonMode, type WhitespaceRules } from './engine';
-import { t } from './i18n';
+import { t, tp } from './i18n';
 import './index.css';
 
 const SAMPLE = `#include <bits/stdc++.h>
@@ -91,10 +91,10 @@ export default function App() {
           {ev.complete && ev.errors === 0
             ? t('lab.equivalent')
             : !ev.complete
-              ? t('lab.incomplete', { count: ev.counts.remaining })
+              ? tp('lab.incomplete', ev.counts.remaining)
               : t('lab.notEquivalent')}
         </p>
-        <p>{t('lab.stats', { correct: ev.counts.correct, total: ev.counts.total, errors: ev.errors })}</p>
+        <p>{t('lab.stats', { correct: ev.counts.correct, total: ev.counts.total, errors: tp('lab.errorCount', ev.errors) })}</p>
         <h3>{t('lab.target')}</h3>
         <p className="hint">{t('lab.legend')}</p>
         <pre className="target">{renderTarget(target.text, target.items, ev.states)}</pre>

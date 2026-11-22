@@ -113,11 +113,12 @@ Las pruebas están en `src/engine/__tests__/` y se ejecutan con `npm test` (Vite
 | `separation.test.ts` | 47 | Pares de tokens donde el espacio es obligatorio u opcional |
 | `tolerant.test.ts` | 61 | Modo tolerante: formato opcional aceptado, separadores necesarios, directivas, errores |
 | `exact.test.ts` | 18 | Indentación, espacios, saltos y líneas en blanco significativos |
-| `custom.test.ts` | 15 | Combinaciones de reglas personalizadas |
+| `custom.test.ts` | 16 | Combinaciones de reglas personalizadas |
 | `comments.test.ts` | 10 | Comentarios incluidos y omitidos |
 | `evaluator.test.ts` | 5 | `push`/`pop`/`peek`, modo bloquear, espacios libres, objetivo vacío |
 | `property.test.ts` | 20 | Propiedades con generador determinista sobre código real (Segment Tree, DSU, macros, Bitmask DP, templates y raw strings): miles de reformateos y mutaciones aleatorias comparados contra un oráculo independiente basado en la secuencia de tokens |
-| **Total** | **241** | |
+| `i18n.test.ts` | 2 | Interpolación y plurales del diccionario español |
+| **Total** | **244** | |
 
 La prueba de propiedades compara el motor contra un oráculo simple: un texto es equivalente en modo tolerante si y solo si, al lexearlo, produce la misma secuencia de tokens, agrupados en las mismas directivas de preprocesador. Así se detectan casos que nadie pensó en escribir a mano.
 
