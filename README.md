@@ -2,12 +2,13 @@
 
 Entrenador de mecanografía de código para programación competitiva. Practica escribiendo tus propias referencias (Segment Tree, DSU, Dynamic Programming, etc.) y mide velocidad y precisión con un motor que entiende C++: tolera diferencias de formato que no cambian el significado y detecta las que sí lo cambian.
 
-> **Estado: fase 1.** Está implementado el motor de comparación consciente del código, con pruebas automatizadas. La interfaz actual es solo un laboratorio para probar el motor; la interfaz de práctica, la importación de referencias, las estadísticas y el historial llegarán en las siguientes fases (ver [`docs/PLAN.md`](docs/PLAN.md)).
+> **Estado: fase 2.** Ya funcionan el motor de comparación consciente del código y la práctica de mecanografía: código completo, pruebas por tiempo y fragmentos aleatorios, con pausa, correcciones y progreso en vivo. La importación de tu colección de referencias, las estadísticas históricas y las gráficas llegarán en las siguientes fases (ver [`docs/PLAN.md`](docs/PLAN.md)).
 
 ## Documentación
 
 - [`docs/PLAN.md`](docs/PLAN.md): plan general, arquitectura y fases.
 - [`docs/MOTOR.md`](docs/MOTOR.md): diseño del motor de comparación, estrategia y pruebas.
+- [`docs/PRACTICA.md`](docs/PRACTICA.md): sesión de práctica, captura de teclado y atajos.
 
 ## Requisitos
 
@@ -17,7 +18,7 @@ Entrenador de mecanografía de código para programación competitiva. Practica 
 
 ```bash
 npm install
-npm run dev        # laboratorio del motor en http://localhost:5173
+npm run dev        # aplicación en http://localhost:5173
 npm test           # pruebas automatizadas (Vitest)
 npm run typecheck  # verificación de tipos
 npm run lint       # análisis estático (oxlint)

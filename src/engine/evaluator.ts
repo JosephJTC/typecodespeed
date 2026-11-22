@@ -51,6 +51,11 @@ export class Evaluator {
     return this.history.length;
   }
 
+  /** Whitespace characters typed so far in the gap at `pos` (when it is a gap). */
+  get gapTyped(): number {
+    return this.gapCount;
+  }
+
   push(ch: string): KeystrokeResult {
     this.current = { pos: this.pos, gapCount: this.gapCount, gapNewline: this.gapNewline, states: [], extraAt: -1 };
     const result = this.process(ch);
