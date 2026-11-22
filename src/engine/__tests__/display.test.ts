@@ -94,7 +94,7 @@ describe('buildDisplay', () => {
     const { ev } = show('int   main (\n\n');
     const before = show('int   main');
     for (let i = 0; i < 4; i++) ev.pop();
-    expect(buildDisplay(ev)).toEqual({ text: before.text, codes: before.codes, caret: before.caret });
+    expect(buildDisplay(ev)).toMatchObject({ text: before.text, codes: before.codes, caret: before.caret });
   });
 
   it('al terminar no queda texto pendiente', () => {

@@ -73,6 +73,10 @@ export function TypingView({ session, meta, onRestart, onNext, onSettings }: Pro
     if (!action) return;
     e.preventDefault();
     flush();
+    if (typeof action === 'object') {
+      session.move(action.move, e.shiftKey);
+      return;
+    }
     switch (action) {
       case 'enter':
         session.input('\n');
@@ -85,6 +89,15 @@ export function TypingView({ session, meta, onRestart, onNext, onSettings }: Pro
         break;
       case 'wordBackspace':
         session.wordBackspace();
+        break;
+      case 'delete':
+        session.deleteForward();
+        break;
+      case 'wordDelete':
+        session.wordDelete();
+        break;
+      case 'selectAll':
+        session.selectAll();
         break;
       case 'pause':
         session.togglePause();
@@ -132,7 +145,7 @@ export function TypingView({ session, meta, onRestart, onNext, onSettings }: Pro
             session.pause('blur');
           }}
         />
-        <CodeView evaluator={session.evaluator} version={version} focused={focused} autoClose={session.config.autoClose} />
+        <CodeView display={session.display()} version={version} focused={focused} />
         {snap.status === 'paused' && <div className="overlay" role="status">{t(`practice.paused.${snap.pauseReason ?? 'user'}`)}</div>}
         {!focused && snap.status !== 'paused' && <div className="overlay" role="status">{t('practice.focusHint')}</div>}
       </div>

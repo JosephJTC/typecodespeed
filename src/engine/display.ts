@@ -1,10 +1,9 @@
-import { matchBrackets } from './brackets';
 import type { Evaluator } from './evaluator';
 
 /**
  * State of each displayed character: c correct, i incorrect, m required whitespace
  * that was skipped, f whitespace typed by the user, x extra typed character, p pending,
- * a pending closing bracket that is already inserted because its opening bracket was typed.
+ * a closing bracket already inserted by the editor that is not evaluated yet.
  */
 export type DisplayCode = 'c' | 'i' | 'm' | 'f' | 'x' | 'p' | 'a';
 
@@ -14,6 +13,25 @@ export interface Display {
   codes: string;
   /** Offset in `text` where the cursor is. */
   caret: number;
+  /** Selected range in `text` (`selStart === selEnd` when nothing is selected). */
+  selStart: number;
+  selEnd: number;
+}
+
+/** A closing bracket inserted by the editor after the evaluated text, not evaluated yet. */
+export interface PendingChar {
+  ch: string;
+  /** Target item it stands for (drawn there, inside the pending code), or -1. */
+  item: number;
+}
+
+export interface DisplayOptions {
+  /** Inserted characters after the evaluated text, in order. */
+  pending?: readonly PendingChar[];
+  /** Cursor offset in the edited text (evaluated characters followed by `pending`); defaults to the end. */
+  cursor?: number;
+  /** Other end of the selection; defaults to `cursor`. */
+  anchor?: number;
 }
 
 const SPACE_MARK = '␣';
@@ -40,8 +58,9 @@ export function ghostWhitespace(ref: string, typed: string): string {
  * whitespace and line breaks) followed by the pending reference text, which is
  * therefore laid out after the typed text instead of at its original position.
  */
-export function buildDisplay(ev: Evaluator, options: { autoClose?: boolean } = {}): Display {
+export function buildDisplay(ev: Evaluator, options: DisplayOptions = {}): Display {
   const { items, text: source } = ev.target;
+  const pending = options.pending ?? [];
   const typedAt = new Map<number, Array<[string, DisplayCode]>>();
   const freeAt = new Map<number, string>();
   for (const k of ev.typed) {
@@ -59,11 +78,14 @@ export function buildDisplay(ev: Evaluator, options: { autoClose?: boolean } = {
 
   let text = '';
   let codes = '';
-  const put = (s: string, code: DisplayCode) => {
+  /** Display offset of every edited character (typed ones, then pending ones). */
+  const offsets: number[] = [];
+  const put = (s: string, code: DisplayCode, typed = false) => {
+    if (typed) offsets.push(text.length);
     text += s;
     codes += code.repeat(s.length);
   };
-  const putTyped = (at: number) => typedAt.get(at)?.forEach(([s, code]) => put(s, code));
+  const putTyped = (at: number) => typedAt.get(at)?.forEach(([s, code]) => put(s, code, true));
 
   for (let i = 0; i < ev.pos; i++) {
     putTyped(i);
@@ -71,32 +93,50 @@ export function buildDisplay(ev: Evaluator, options: { autoClose?: boolean } = {
     const state = ev.states[i];
     if (item.kind === 'gap') {
       if (state === 'missed') put(item.requireNewline ? NEWLINE_MARK : SPACE_MARK, 'm');
-    } else if (state === 'correct') put(item.ch, 'c');
-    else if (state === 'incorrect') put(mark(item.ch), 'i');
+    } else if (state === 'correct') put(item.ch, 'c', true);
+    else if (state === 'incorrect') put(mark(item.ch), 'i', true);
     else if (state === 'missed') put(mark(item.ch), 'm');
   }
   putTyped(ev.pos);
-  const caret = text.length;
+  // A keystroke that left no visible trace (should not happen): keep the mapping aligned.
+  while (offsets.length < ev.typedLength) offsets.push(text.length);
+  const frontier = text.length;
 
   const current = items[ev.pos];
-  if (!current) return { text, codes, caret };
-  let from = current.src;
-  if (current.kind === 'gap') {
-    put(ghostWhitespace(source.slice(current.src, current.srcEnd), freeAt.get(ev.pos) ?? ''), 'p');
-    from = current.srcEnd;
-  }
-  const rest = text.length - from;
-  put(source.slice(from), 'p');
-  if (options.autoClose) {
-    const closed: number[] = [];
-    for (const [closer, opener] of matchBrackets(ev.target)) {
-      if (closer >= ev.pos && opener < ev.pos && ev.states[opener] === 'correct') closed.push(items[closer].src + rest);
+  const inGhost = (p: PendingChar) => current !== undefined && p.item >= ev.pos && items[p.item]?.kind === 'char';
+  for (const p of pending) if (!inGhost(p)) put(p.ch, 'a');
+
+  const pendingAt: number[] = [];
+  if (current) {
+    let from = current.src;
+    if (current.kind === 'gap') {
+      put(ghostWhitespace(source.slice(current.src, current.srcEnd), freeAt.get(ev.pos) ?? ''), 'p');
+      from = current.srcEnd;
     }
-    if (closed.length) {
-      const list = codes.split('');
-      for (const at of closed) list[at] = 'a';
-      codes = list.join('');
+    const shift = text.length - from;
+    put(source.slice(from), 'p');
+    const list = codes.split('');
+    for (const p of pending) {
+      if (!inGhost(p)) continue;
+      const at = items[p.item].src + shift;
+      list[at] = 'a';
+      pendingAt.push(at);
     }
+    codes = list.join('');
   }
-  return { text, codes, caret };
+  let inline = frontier;
+  let ghost = 0;
+  for (const p of pending) offsets.push(inGhost(p) ? pendingAt[ghost++] : inline++);
+
+  const edited = offsets.length;
+  const at = (pos: number) => {
+    if (pos <= 0) return offsets[0] ?? frontier;
+    if (pos < ev.typedLength) return offsets[pos];
+    if (pos === ev.typedLength) return frontier;
+    return offsets[Math.min(pos, edited) - 1] + 1;
+  };
+  const cursor = options.cursor ?? edited;
+  const caret = at(cursor);
+  const other = at(options.anchor ?? cursor);
+  return { text, codes, caret, selStart: Math.min(caret, other), selEnd: Math.max(caret, other) };
 }
