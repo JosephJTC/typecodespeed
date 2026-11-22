@@ -1,0 +1,58 @@
+/** Textos en español (idioma predeterminado). Las demás traducciones deben tener la misma forma. */
+export const es = {
+  app: {
+    name: 'TypeCodeSpeed',
+    tagline: 'Mecanografía de código para programación competitiva',
+  },
+  modes: {
+    tolerant: 'Tolerante (consciente del código)',
+    exact: 'Formato exacto',
+    custom: 'Personalizado',
+  },
+  modeDescriptions: {
+    tolerant: 'La indentación, los espacios repetidos y los saltos de línea opcionales no cuentan como error; los espacios que separan tokens sí.',
+    exact: 'Debes reproducir los espacios, la indentación y los saltos de línea tal como están.',
+    custom: 'Elige qué diferencias de formato se ignoran.',
+  },
+  rules: {
+    indentation: 'Indentación',
+    inlineSpaces: 'Espacios dentro de la línea',
+    lineBreaks: 'Saltos de línea',
+    blankLines: 'Líneas en blanco',
+    comments: 'Comentarios',
+    exact: 'Exacta',
+    ignore: 'Ignorar',
+    collapse: 'Colapsar (varios = uno)',
+    lexical: 'Solo donde separan tokens',
+    flexible: 'Flexibles',
+    include: 'Incluir (hay que escribirlos)',
+    omit: 'Omitir',
+  },
+  errors: {
+    substitution: 'Carácter incorrecto',
+    insertion: 'Carácter de más',
+    missingSeparator: 'Falta un espacio para separar tokens',
+    missingNewline: 'Falta un salto de línea',
+    forbiddenWhitespace: 'Aquí no se permite un espacio',
+    unexpectedNewline: 'Aquí no se permite un salto de línea',
+    missingWhitespace: 'Falta un espacio o indentación',
+  },
+  lab: {
+    title: 'Laboratorio del motor de comparación',
+    intro:
+      'Vista previa de la fase 1: pega código de referencia, escribe tu versión y observa cómo la evalúa el motor. La interfaz completa de práctica llegará en las siguientes fases.',
+    reference: 'Código de referencia',
+    typed: 'Lo que escribiste',
+    mode: 'Modo de comparación',
+    result: 'Resultado',
+    equivalent: 'Equivalente: sin errores y completo',
+    notEquivalent: 'No equivalente',
+    incomplete: 'Incompleto: faltan {count} caracteres',
+    stats: '{correct} de {total} caracteres correctos · {errors} errores',
+    errorList: 'Errores detectados',
+    noErrors: 'No hay errores.',
+    errorAt: 'Línea {line}, columna {column}: {message}',
+    target: 'Texto a escribir (con estado)',
+    legend: 'Verde: correcto · Rojo: error · Gris: pendiente · Subrayado rojo: espacio faltante',
+  },
+} as const;

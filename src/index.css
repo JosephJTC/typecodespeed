@@ -1,0 +1,31 @@
+:root {
+  color-scheme: dark;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background: #0f1117;
+  color: #d7dae0;
+}
+body { margin: 0; }
+.lab { max-width: 1200px; margin: 0 auto; padding: 24px; }
+h1 { margin: 0; font-size: 1.6rem; }
+.tagline { margin-top: 4px; color: #8b93a7; }
+.hint { color: #8b93a7; font-size: 0.9rem; }
+.controls { display: flex; flex-wrap: wrap; gap: 16px; align-items: end; }
+.controls .hint { flex-basis: 100%; margin: 0; }
+.custom { display: flex; flex-wrap: wrap; gap: 16px; }
+label { display: flex; flex-direction: column; gap: 6px; font-size: 0.9rem; }
+select, textarea {
+  background: #171a23; color: inherit; border: 1px solid #2a2f3d; border-radius: 6px; padding: 6px 8px;
+}
+.editors { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+textarea { min-height: 260px; font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace; font-size: 14px; tab-size: 4; }
+.target {
+  background: #171a23; border: 1px solid #2a2f3d; border-radius: 6px; padding: 12px;
+  font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace; font-size: 14px; tab-size: 4; white-space: pre-wrap;
+}
+.correct { color: #7ee787; }
+.incorrect, .missed { color: #ff7b72; background: rgba(255, 123, 114, 0.15); }
+.pending { color: #8b93a7; }
+.free { color: #8b93a7; }
+.missed-gap { text-decoration: underline wavy #ff7b72; }
+.ok { color: #7ee787; font-weight: 600; }
+.bad { color: #ff7b72; font-weight: 600; }
