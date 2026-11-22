@@ -2,12 +2,20 @@ import type { ErrorKind, GapItem, ItemState, KeystrokeResult, Target } from './t
 
 const isWhitespace = (ch: string) => ch === ' ' || ch === '\t' || ch === '\n' || ch === '\r' || ch === '\f' || ch === '\v';
 
-interface Undo {
+/** One typed character and where it landed. */
+export interface TypedChar {
+  ch: string;
+  /** Gap that absorbed it as whitespace, or -1. */
+  freeAt: number;
+  /** Item before which it was inserted as an extra character, or -1. */
+  extraAt: number;
+}
+
+interface Undo extends TypedChar {
   pos: number;
   gapCount: number;
   gapNewline: boolean;
   states: Array<[number, ItemState]>;
-  extraAt: number;
 }
 
 export interface EvaluationCounts {
@@ -47,6 +55,11 @@ export class Evaluator {
     this.extras = new Array(target.items.length + 1).fill(0);
   }
 
+  /** Every character typed so far (and not undone), in order. */
+  get typed(): readonly TypedChar[] {
+    return this.history;
+  }
+
   get typedLength(): number {
     return this.history.length;
   }
@@ -57,7 +70,7 @@ export class Evaluator {
   }
 
   push(ch: string): KeystrokeResult {
-    this.current = { pos: this.pos, gapCount: this.gapCount, gapNewline: this.gapNewline, states: [], extraAt: -1 };
+    this.current = { pos: this.pos, gapCount: this.gapCount, gapNewline: this.gapNewline, states: [], ch, freeAt: -1, extraAt: -1 };
     const result = this.process(ch);
     this.history.push(this.current);
     this.current = null;
@@ -122,6 +135,7 @@ export class Evaluator {
           if ((nl ? item.newlines : item.spaces) && this.gapCount < item.max) {
             this.gapCount++;
             if (nl) this.gapNewline = true;
+            if (this.current) this.current.freeAt = this.pos;
             return { status: 'free', item: this.pos };
           }
           if (this.gapSatisfied(item)) {

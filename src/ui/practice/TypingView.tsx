@@ -132,14 +132,7 @@ export function TypingView({ session, meta, onRestart, onNext, onSettings }: Pro
             session.pause('blur');
           }}
         />
-        <CodeView
-          target={session.target}
-          states={session.evaluator.states}
-          extras={session.evaluator.extras}
-          caret={session.caretOffset()}
-          version={version}
-          focused={focused}
-        />
+        <CodeView evaluator={session.evaluator} version={version} focused={focused} />
         {snap.status === 'paused' && <div className="overlay" role="status">{t(`practice.paused.${snap.pauseReason ?? 'user'}`)}</div>}
         {!focused && snap.status !== 'paused' && <div className="overlay" role="status">{t('practice.focusHint')}</div>}
       </div>

@@ -39,6 +39,24 @@ describe('TypingView', () => {
     expect(snap.corrections).toBe(3);
   });
 
+  it('muestra los espacios y saltos escritos y acomoda el código pendiente después', async () => {
+    const user = userEvent.setup({ delay: null });
+    const { input } = setup('int main() {\n    return 0;\n}');
+    input.focus();
+    const view = () => screen.getByTestId('code-view');
+    const lines = () => [...view().querySelectorAll('.line-text')].map((l) => l.textContent);
+    expect(lines()).toEqual(['int main() {', '    return 0;', '}']);
+    await user.keyboard('int   main(){{');
+    expect(lines()).toEqual(['int   main(){', '    return 0;', '}']);
+    await user.keyboard(' return');
+    expect(lines()).toEqual(['int   main(){ return 0;', '}']);
+    await user.keyboard(' 0;{Enter}{Enter}');
+    expect(lines()).toEqual(['int   main(){ return 0;', '\u200b', '}']);
+    expect(view().querySelectorAll('.code-line')[2].querySelector('.caret')).toBeTruthy();
+    await user.keyboard('{Backspace}{Backspace}');
+    expect(lines()).toEqual(['int   main(){ return 0;', '}']);
+  });
+
   it('una ráfaga en un solo evento input no pierde caracteres', () => {
     const { session, input } = setup('a+b;');
     act(() => {

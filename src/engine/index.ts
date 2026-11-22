@@ -7,7 +7,9 @@ export { normalizeSource, stripComments } from './normalize';
 export { TOLERANT_RULES, EXACT_RULES, DEFAULT_OPTIONS, resolveRules } from './rules';
 export { buildTarget } from './target';
 export { Evaluator, evaluate } from './evaluator';
-export type { Evaluation, EvaluationCounts } from './evaluator';
+export type { Evaluation, EvaluationCounts, TypedChar } from './evaluator';
+export { buildDisplay, ghostWhitespace } from './display';
+export type { Display, DisplayCode } from './display';
 
 import { evaluate } from './evaluator';
 import { DEFAULT_OPTIONS } from './rules';
