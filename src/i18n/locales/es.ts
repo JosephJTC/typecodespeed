@@ -405,7 +405,7 @@ export const es = {
   lab: {
     title: 'Laboratorio del motor de comparación',
     intro:
-      'Vista previa de la fase 1: pega código de referencia, escribe tu versión y observa cómo la evalúa el motor. La interfaz completa de práctica llegará en las siguientes fases.',
+      'Herramienta de diagnóstico: pega código de referencia, escribe tu versión y observa cómo la evalúa el motor de comparación en cada modo.',
     reference: 'Código de referencia',
     typed: 'Lo que escribiste',
     mode: 'Modo de comparación',

@@ -109,6 +109,27 @@ describe('explorador de referencias', () => {
   });
 });
 
+describe('otro fragmento', () => {
+  it('no repite el fragmento visible aunque se omitan los comentarios', async () => {
+    const user = userEvent.setup({ delay: null });
+    render(<App />);
+    await flush();
+    await user.click(screen.getByRole('button', { name: 'Referencias' }));
+    await flush();
+    const code = 'void a() {\n  // uno\n  x();\n}\n\nvoid b() {\n  // dos\n  y();\n}\n';
+    fireEvent.change(screen.getByLabelText('Elegir archivos…', { selector: 'input' }), { target: { files: [file('dos.cpp', code)] } });
+    await user.click(await screen.findByRole('button', { name: 'dos.cpp' }));
+    await user.click(screen.getByRole('button', { name: 'Fragmento aleatorio' }));
+    await user.click(screen.getByRole('button', { name: 'Comenzar' }));
+    const visible = () => (screen.getByTestId('code-view').textContent!.includes('x()') ? 'a' : 'b');
+    for (let i = 0; i < 25; i++) {
+      const before = visible();
+      await user.click(screen.getByRole('button', { name: /Otro fragmento/ }));
+      expect(visible()).not.toBe(before);
+    }
+  });
+});
+
 describe('ajustes', () => {
   it('se guardan y se restauran al volver a abrir la aplicación', async () => {
     const user = userEvent.setup();

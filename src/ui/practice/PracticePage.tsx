@@ -33,9 +33,10 @@ export function PracticePage({ settings, files, onChange, onOpenLibrary, onOpenS
 
   const start = useCallback(
     (previous?: Run, sameSource = false) => {
+      // The original text, not `target.text`: the target drops comments when they are omitted.
       const source = sameSource && previous ? previous.source : resolve(previous?.source.id);
       if (!source) return;
-      const { first, next } = textsFor(settings, source, Math.random, previous?.session.target.text);
+      const { first, next } = textsFor(settings, source, Math.random, previous?.session.texts.at(-1));
       if (!first.trim()) return;
       setRun({ session: new TypingSession(first, sessionConfig(settings, source.language, next)), text: first, source, meta: metaFor(settings, source) });
     },
