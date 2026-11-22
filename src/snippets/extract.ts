@@ -84,7 +84,13 @@ export function dedent(text: string): string {
  * Picks a random snippet from the sources: a whole block with a suitable length
  * when possible, otherwise a window of consecutive lines.
  */
-export function pickSnippet(sources: readonly string[], rand: () => number, options: SnippetOptions = DEFAULT_SNIPPET_OPTIONS, languageId = 'cpp'): string {
+export function pickSnippet(
+  sources: readonly string[],
+  rand: () => number,
+  options: SnippetOptions = DEFAULT_SNIPPET_OPTIONS,
+  languageId = 'cpp',
+  avoid?: string,
+): string {
   const usable = sources.filter((s) => s.trim());
   if (usable.length === 0) return '';
   const candidates: string[] = [];
@@ -93,7 +99,9 @@ export function pickSnippet(sources: readonly string[], rand: () => number, opti
       if (b.lines >= options.minLines && b.lines <= options.maxLines) candidates.push(b.text);
     }
   }
-  if (candidates.length > 0) return candidates[Math.floor(rand() * candidates.length)];
+  const fresh = candidates.filter((c) => c !== avoid);
+  const pool = fresh.length > 0 ? fresh : candidates;
+  if (pool.length > 0) return pool[Math.floor(rand() * pool.length)];
   const src = normalizeSource(usable[Math.floor(rand() * usable.length)]);
   const lines = src.split('\n');
   const len = Math.min(options.maxLines, lines.length);

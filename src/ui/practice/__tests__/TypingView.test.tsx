@@ -7,7 +7,7 @@ import { TypingView } from '../TypingView';
 
 afterEach(cleanup);
 
-function setup(text: string, policy: 'advance' | 'block' = 'advance') {
+function setup(text: string, policy: 'advance' | 'block' = 'advance', onSettings = () => {}) {
   const session = new TypingSession(text, {
     compare: { mode: 'tolerant', comments: 'omit' },
     language: 'cpp',
@@ -16,7 +16,7 @@ function setup(text: string, policy: 'advance' | 'block' = 'advance') {
     idleTimeoutMs: 0,
   });
   const onRestart = vi.fn();
-  render(<TypingView session={session} onRestart={onRestart} onSettings={() => {}} />);
+  render(<TypingView session={session} onRestart={onRestart} onSettings={onSettings} />);
   const input = screen.getByRole('textbox') as HTMLTextAreaElement;
   return { session, input, onRestart };
 }
@@ -100,5 +100,34 @@ describe('TypingView', () => {
     input.focus();
     await user.keyboard('{Control>}{Enter}{/Control}');
     expect(onRestart).toHaveBeenCalled();
+  });
+});
+
+describe('Resultados', () => {
+  it('Enter activa el botón enfocado y, sin foco en un botón, reinicia', async () => {
+    const user = userEvent.setup({ delay: null });
+    const onSettings = vi.fn();
+    const { input, onRestart } = setup('a;', 'advance', onSettings);
+    input.focus();
+    await user.keyboard('a;');
+    screen.getByRole('button', { name: 'Cambiar configuración' }).focus();
+    await user.keyboard('{Enter}');
+    expect(onSettings).toHaveBeenCalledTimes(1);
+    expect(onRestart).not.toHaveBeenCalled();
+    (document.activeElement as HTMLElement).blur();
+    await user.keyboard('{Enter}');
+    expect(onRestart).toHaveBeenCalledTimes(1);
+  });
+
+  it('volver a enfocar después de perder el foco reanuda la prueba', () => {
+    const { session, input } = setup('abc;');
+    act(() => {
+      input.focus();
+      session.input('a');
+      input.blur();
+    });
+    expect(session.status).toBe('paused');
+    act(() => input.focus());
+    expect(session.status).toBe('running');
   });
 });

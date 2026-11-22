@@ -1,6 +1,6 @@
 import type { CompareOptions, WhitespaceRules } from '../../engine';
 import type { ErrorPolicy, SessionConfig } from '../../session';
-import { pickSnippet, SAMPLES } from '../../snippets';
+import { DEFAULT_SNIPPET_OPTIONS, pickSnippet, SAMPLES } from '../../snippets';
 
 export type TestType = 'full' | 'timed' | 'snippet';
 
@@ -42,15 +42,22 @@ export function sourcesFor(s: PracticeSettings): string[] {
 }
 
 /** First text of a test and, for timed tests, a generator of further texts. */
-export function textsFor(s: PracticeSettings, rand: () => number = Math.random): { first: string; next?: () => string } {
+export function textsFor(
+  s: PracticeSettings,
+  rand: () => number = Math.random,
+  /** Text just practiced; a different one is chosen when possible. */
+  previous?: string,
+): { first: string; next?: () => string } {
   const sources = sourcesFor(s);
   if (sources.length === 0) return { first: '' };
-  if (s.testType === 'snippet') return { first: pickSnippet(sources, rand) };
+  if (s.testType === 'snippet') return { first: pickSnippet(sources, rand, DEFAULT_SNIPPET_OPTIONS, 'cpp', previous) };
   if (s.testType === 'timed') {
-    const next = () => pickSnippet(sources, rand);
+    let last = previous;
+    const next = () => (last = pickSnippet(sources, rand, DEFAULT_SNIPPET_OPTIONS, 'cpp', last));
     return { first: next(), next };
   }
-  return { first: sources[Math.floor(rand() * sources.length)] };
+  const fresh = sources.length > 1 ? sources.filter((x) => x !== previous) : sources;
+  return { first: fresh[Math.floor(rand() * fresh.length)] };
 }
 
 export function sessionConfig(s: PracticeSettings, next?: () => string): SessionConfig {

@@ -54,6 +54,18 @@ export function TypingView({ session, onRestart, onNext, onSettings }: Props) {
     session.input(text);
   };
 
+  /** Clicking the code keeps or restores focus; clicks on its scrollbars keep their default behavior. */
+  const focusInput = (e: React.MouseEvent<HTMLDivElement>) => {
+    const view = (e.target as HTMLElement).closest('.code-view');
+    if (view) {
+      const r = view.getBoundingClientRect();
+      const onScrollbar = e.clientX - r.left >= view.clientLeft + view.clientWidth || e.clientY - r.top >= view.clientTop + view.clientHeight;
+      if (onScrollbar) return;
+    }
+    e.preventDefault();
+    inputRef.current?.focus();
+  };
+
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     const action = keyAction(e.nativeEvent);
     if (!action) return;
@@ -89,7 +101,7 @@ export function TypingView({ session, onRestart, onNext, onSettings }: Props) {
   return (
     <div className="typing">
       <StatsBar snapshot={snap} />
-      <div className="typing-area" onMouseDown={(e) => { e.preventDefault(); inputRef.current?.focus(); }}>
+      <div className="typing-area" onMouseDown={focusInput}>
         <textarea
           ref={inputRef}
           className="hidden-input"
@@ -111,6 +123,7 @@ export function TypingView({ session, onRestart, onNext, onSettings }: Props) {
           }}
           onFocus={() => {
             setFocused(true);
+            if (session.snapshot().pauseReason === 'blur') session.resume();
           }}
           onBlur={() => {
             setFocused(false);

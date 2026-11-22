@@ -298,6 +298,19 @@ describe('sesión: pausa, inactividad y tiempo', () => {
     expect(s.backspace()).toBe(false);
   });
 
+  it('prueba por tiempo: conserva errores sin corregir y tokens de textos anteriores', () => {
+    const texts = ['cd;'];
+    const { s } = make('ab;', { timeLimitMs: 60_000, nextText: () => texts.shift() ?? 'z;' });
+    s.input('xb;');
+    expect(s.segmentIndex).toBe(1);
+    s.input('cd;');
+    const snap = s.snapshot();
+    expect(snap.errorsMade).toBe(1);
+    expect(snap.uncorrected).toBe(1);
+    expect(snap.sessionTokensTotal).toBe(2 + 2 + 2); // ab; cd; and the pending z;
+    expect(snap.sessionTokensCorrect).toBe(1 + 2);
+  });
+
   it('calcula WPM con caracteres correctos / 5 por minuto', () => {
     const { s, clock } = make('abcdefghij;');
     s.input('a');

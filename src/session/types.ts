@@ -81,4 +81,7 @@ export interface SessionSnapshot {
   textsCompleted: number;
   /** Characters typed correctly in all the session's texts. */
   sessionCorrectChars: number;
+  /** Tokens of every text of the session (timed tests chain several texts). */
+  sessionTokensTotal: number;
+  sessionTokensCorrect: number;
 }

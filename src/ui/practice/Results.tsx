@@ -15,6 +15,8 @@ export function Results({ snapshot: s, onRestart, onNext, onSettings }: Props) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Enter') return;
+      // Let Enter activate the focused control (e.g. «Cambiar configuración»).
+      if (e.target instanceof HTMLElement && e.target.closest('button, a, input, select, textarea')) return;
       e.preventDefault();
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && onNext) onNext();
       else onRestart();
@@ -39,7 +41,7 @@ export function Results({ snapshot: s, onRestart, onNext, onSettings }: Props) {
         <div className="stat"><dt>{t('practice.results.errorsMade')}</dt><dd>{fmt(s.errorsMade)}</dd></div>
         <div className="stat"><dt>{t('practice.results.uncorrected')}</dt><dd>{fmt(s.uncorrected)}</dd></div>
         <div className="stat"><dt>{t('practice.results.corrections')}</dt><dd>{fmt(s.corrections)}</dd></div>
-        <div className="stat"><dt>{t('practice.results.tokensCorrect')}</dt><dd>{t('practice.of', { value: s.tokensCorrect, total: s.tokensTotal })}</dd></div>
+        <div className="stat"><dt>{t('practice.results.tokensCorrect')}</dt><dd>{t('practice.of', { value: s.sessionTokensCorrect, total: s.sessionTokensTotal })}</dd></div>
         {s.textsCompleted > 0 && <div className="stat"><dt>{t('practice.results.texts')}</dt><dd>{fmt(s.textsCompleted)}</dd></div>}
       </dl>
       <h3>{t('practice.results.byKind')}</h3>
@@ -47,7 +49,7 @@ export function Results({ snapshot: s, onRestart, onNext, onSettings }: Props) {
         <ul>{kinds.map(([k, n]) => <li key={k}>{t(`errors.${k}`)}: {fmt(n)}</li>)}</ul>
       )}
       <div className="actions">
-        <button autoFocus onClick={onRestart}>{t('practice.restart')}</button>
+        <button onClick={onRestart}>{t('practice.restart')}</button>
         {onNext && <button onClick={onNext}>{t('practice.newSnippet')}</button>}
         <button onClick={onSettings}>{t('practice.settings')}</button>
       </div>

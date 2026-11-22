@@ -7,6 +7,9 @@ const isWs = (ch: string) => ch === ' ' || ch === '\t' || ch === '\n';
 interface TextStats {
   correct: number;
   total: number;
+  uncorrected: number;
+  tokensTotal: number;
+  tokensCorrect: number;
 }
 
 /** Result of feeding input to the session. */
@@ -195,22 +198,32 @@ export class TypingSession {
     }
   }
 
+  private tokenStats(): { done: number; correct: number } {
+    const ev = this.evaluator;
+    const items = this.target.items;
+    let done = 0;
+    let correct = 0;
+    for (const [first, last] of this.tokenRanges.values()) {
+      if (last >= ev.pos) continue;
+      done++;
+      let ok = true;
+      for (let i = first; i <= last && ok; i++) if (items[i].kind === 'char' && ev.states[i] !== 'correct') ok = false;
+      if (ok) correct++;
+    }
+    return { done, correct };
+  }
+
   snapshot(): SessionSnapshot {
     const ev = this.evaluator;
     const counts = ev.getCounts();
-    const items = this.target.items;
     const elapsedMs = Math.max(0, this.elapsed());
     const minutes = elapsedMs / 60000;
 
-    let tokensDone = 0;
-    let tokensCorrect = 0;
-    for (const [first, last] of this.tokenRanges.values()) {
-      if (last >= ev.pos) continue;
-      tokensDone++;
-      let ok = true;
-      for (let i = first; i <= last && ok; i++) if (items[i].kind === 'char' && ev.states[i] !== 'correct') ok = false;
-      if (ok) tokensCorrect++;
-    }
+    const { done: tokensDone, correct: tokensCorrect } = this.tokenStats();
+    const prev = this.finishedTexts.reduce(
+      (a, x) => ({ uncorrected: a.uncorrected + x.uncorrected, tokensTotal: a.tokensTotal + x.tokensTotal, tokensCorrect: a.tokensCorrect + x.tokensCorrect }),
+      { uncorrected: 0, tokensTotal: 0, tokensCorrect: 0 },
+    );
 
     const caret = this.caretOffset();
     const text = this.target.text;
@@ -241,11 +254,13 @@ export class TypingSession {
       rawWpm: minutes > 0 ? this.counters.typed / CHARS_PER_WORD / minutes : 0,
       accuracy: evaluated === 0 ? 1 : this.counters.correct / evaluated,
       errorsMade: this.counters.errors,
-      uncorrected: counts.incorrect + counts.missed + counts.extra,
+      uncorrected: prev.uncorrected + counts.incorrect + counts.missed + counts.extra,
       errorsByKind: { ...this.errorsByKind },
       corrections: this.counters.corrections,
       textsCompleted: this.finishedTexts.length,
       sessionCorrectChars: sessionCorrect,
+      sessionTokensTotal: prev.tokensTotal + this.tokenRanges.size,
+      sessionTokensCorrect: prev.tokensCorrect + tokensCorrect,
     };
   }
 
@@ -372,7 +387,14 @@ export class TypingSession {
 
   private nextSegment() {
     const counts = this.evaluator.getCounts();
-    this.finishedTexts.push({ correct: counts.correct, total: counts.total });
+    const tokens = this.tokenStats();
+    this.finishedTexts.push({
+      correct: counts.correct,
+      total: counts.total,
+      uncorrected: counts.incorrect + counts.missed + counts.extra,
+      tokensTotal: this.tokenRanges.size,
+      tokensCorrect: tokens.correct,
+    });
     this.segment++;
     this.target = buildTarget(this.config.nextText!(), this.config.language, this.config.compare);
     this.evaluator = new Evaluator(this.target);

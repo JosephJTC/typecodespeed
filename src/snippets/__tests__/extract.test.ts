@@ -73,6 +73,17 @@ describe('extracción de fragmentos', () => {
     expect(s.split('\n').length).toBe(10);
   });
 
+  it('evita repetir el fragmento anterior cuando hay alternativas', () => {
+    const sources = [SAMPLES[0].code];
+    const opts = { minLines: 3, maxLines: 30 };
+    for (let seed = 0; seed < 30; seed++) {
+      const prev = pickSnippet(sources, rng(seed), opts);
+      expect(pickSnippet(sources, rng(seed), opts, 'cpp', prev)).not.toBe(prev);
+    }
+    const single = 'int f() {\n    return 1;\n}';
+    expect(pickSnippet([single], rng(1), opts, 'cpp', single)).toBe(single);
+  });
+
   it('fuentes vacías devuelven texto vacío', () => {
     expect(pickSnippet(['', '   '], rng(1))).toBe('');
   });
