@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isEquivalent } from '..';
+import { buildTarget, evaluate, isEquivalent } from '..';
 import type { CompareOptions, WhitespaceRules } from '../types';
 
 const custom = (rules: Partial<WhitespaceRules>): CompareOptions => ({
@@ -76,5 +76,15 @@ describe('modo personalizado: saltos de línea flexibles', () => {
   });
   it('pero sigue exigiendo al menos un espacio donde lo había', () => {
     expect(isEquivalent('int a;\nint b;', 'int a;int b;', 'cpp', opts)).toBe(false);
+  });
+});
+
+describe('modo personalizado: diagnóstico de espacios exigidos por formato', () => {
+  const opts = custom({ lineBreaks: 'flexible', inlineSpaces: 'collapse' });
+  const firstError = (src: string, typed: string) =>
+    evaluate(buildTarget(src, 'cpp', opts), typed).results.find((r) => r.error)?.error;
+  it('distingue el espacio de formato del separador léxico', () => {
+    expect(firstError('if (x) {\n  y();\n}', 'if (x) {y();}')).toBe('missingWhitespace');
+    expect(firstError('int x;', 'intx;')).toBe('missingSeparator');
   });
 });
