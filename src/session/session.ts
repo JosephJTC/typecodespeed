@@ -34,6 +34,8 @@ export class TypingSession {
   target: Target;
   evaluator: Evaluator;
   readonly log: KeystrokeLog[] = [];
+  /** Every text of the session, in order (timed tests chain several). */
+  readonly texts: string[] = [];
 
   private now: () => number;
   private _status: SessionStatus = 'ready';
@@ -59,6 +61,7 @@ export class TypingSession {
   constructor(text: string, config: SessionConfig) {
     this.config = config;
     this.now = config.now ?? (() => performance.now());
+    this.texts.push(text);
     this.target = buildTarget(text, config.language, config.compare);
     this.evaluator = new Evaluator(this.target);
     this.indexTokens();
@@ -339,12 +342,16 @@ export class TypingSession {
   }
 
   private record(kind: 'char', ch: string, r: KeystrokeResult, auto = false, rejected = false) {
+    const item = this.target.items[r.item];
     this.log.push({
       t: this.elapsed(),
       kind,
       ch,
       status: rejected ? 'rejected' : r.status,
       error: r.error,
+      expected: item?.kind === 'char' && (r.status === 'correct' || r.error === 'substitution') ? item.ch : undefined,
+      // Whitespace mistakes (missing separator, forbidden space…) belong to the gap, not to the neighbouring token.
+      tokenType: r.error && r.error !== 'substitution' && r.error !== 'insertion' ? 'whitespace' : item ? (item.kind === 'char' ? item.tokenType : 'whitespace') : undefined,
       auto: auto || undefined,
       segment: this.segment,
     });
@@ -396,7 +403,9 @@ export class TypingSession {
       tokensCorrect: tokens.correct,
     });
     this.segment++;
-    this.target = buildTarget(this.config.nextText!(), this.config.language, this.config.compare);
+    const text = this.config.nextText!();
+    this.texts.push(text);
+    this.target = buildTarget(text, this.config.language, this.config.compare);
     this.evaluator = new Evaluator(this.target);
     this.groups = [];
     this.indexTokens();
