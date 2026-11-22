@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { t, tp } from '../../i18n';
-import { exportHistory, insights, parseHistory, progress, summarize, type TestRecord, type TestType } from '../../stats';
+import { bySource, exportHistory, insights, parseHistory, progress, summarize, type TestRecord, type TestType } from '../../stats';
 import { LineChart } from '../charts/LineChart';
 import { fmt, formatTime, percent } from '../practice/format';
 import { Breakdown } from './Breakdown';
@@ -26,6 +26,7 @@ export function StatsPage() {
   const summary = useMemo(() => summarize(records), [records]);
   const points = useMemo(() => progress(records, WINDOW), [records]);
   const notes = useMemo(() => insights(records), [records]);
+  const sources = useMemo(() => bySource(records), [records]);
 
   if (all === null) return <p className="hint">{t('stats.loading')}</p>;
 
@@ -140,6 +141,34 @@ export function StatsPage() {
 
           <h3>{t('stats.weaknesses')}</h3>
           <Breakdown data={summary} minAttempts={5} />
+
+          <h3>{t('stats.bySource.title')}</h3>
+          <div className="table-scroll">
+            <table data-testid="by-source">
+              <thead>
+                <tr>
+                  <th>{t('stats.bySource.source')}</th>
+                  <th>{t('stats.bySource.tests')}</th>
+                  <th>{t('stats.bySource.avgWpm')}</th>
+                  <th>{t('stats.bySource.bestWpm')}</th>
+                  <th>{t('stats.bySource.avgAccuracy')}</th>
+                  <th>{t('stats.bySource.last')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sources.slice(0, 15).map((x) => (
+                  <tr key={x.sourceId}>
+                    <td>{x.sourceName}</td>
+                    <td>{fmt(x.tests)}</td>
+                    <td>{fmt(x.avgWpm, 1)}</td>
+                    <td>{fmt(x.bestWpm, 1)}</td>
+                    <td>{percent(x.avgAccuracy)}</td>
+                    <td>{formatDate(x.lastAt)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           <h3>{t('stats.history.title')} <small>({tp('stats.history.count', records.length)})</small></h3>
           {comparing && pair.length === 2 ? (

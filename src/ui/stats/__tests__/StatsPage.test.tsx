@@ -44,7 +44,8 @@ describe('página de estadísticas', () => {
     // older: 2,4 s y 6 correctos al final; newer: 1,2 s y 7 → 13 caracteres en 3,6 s
     expect(overview.getByText('WPM promedio').nextSibling?.textContent).toBe((13 / 5 / (3.6 / 60)).toFixed(1));
     expect(overview.getByText('Mejor WPM').nextSibling?.textContent).toBe(newer.wpm.toFixed(1));
-    expect(screen.getAllByText('DSU')).toHaveLength(2);
+    expect(screen.getAllByText('DSU')).toHaveLength(3);
+    expect(within(screen.getByTestId('by-source')).getByText('DSU').closest('tr')!.textContent).toContain('DSU2');
     expect(screen.getByText('Velocidad en cada prueba')).toBeTruthy();
     expect(screen.getByText('c → x')).toBeTruthy();
   });

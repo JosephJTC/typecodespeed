@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Referencias personales: nunca deben subirse al repositorio.
+referencias/
+referencias*.zip

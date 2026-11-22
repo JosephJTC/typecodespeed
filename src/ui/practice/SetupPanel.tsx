@@ -1,23 +1,29 @@
 import { t, tp } from '../../i18n';
+import { filterFiles, type RefFile } from '../../library';
 import { SAMPLES } from '../../snippets';
-import { CustomRules } from '../components/RuleSelect';
-import { DURATIONS, IDLE_OPTIONS, sourcesFor, type PracticeSettings, type TestType } from './config';
+import { DURATIONS, type PracticeSettings, type TestType } from './config';
 
 interface Props {
   settings: PracticeSettings;
+  files: readonly RefFile[];
+  /** Whether the current source has code to practice. */
+  ready: boolean;
   onChange: (s: PracticeSettings) => void;
   onStart: () => void;
+  onOpenLibrary: () => void;
+  onOpenSettings: () => void;
 }
 
-export function SetupPanel({ settings: s, onChange, onStart }: Props) {
+export function SetupPanel({ settings: s, files, ready, onChange, onStart, onOpenLibrary, onOpenSettings }: Props) {
   const set = <K extends keyof PracticeSettings>(k: K, v: PracticeSettings[K]) => onChange({ ...s, [k]: v });
-  const empty = sourcesFor(s).length === 0;
+  const refFile = files.find((f) => f.path === s.refPath);
+  const pool = filterFiles(files, s.refQuery).length;
   return (
     <form
-      className="setup"
+      className="setup card"
       onSubmit={(e) => {
         e.preventDefault();
-        if (!empty) onStart();
+        if (ready) onStart();
       }}
     >
       <h2>{t('practice.setupTitle')}</h2>
@@ -41,12 +47,22 @@ export function SetupPanel({ settings: s, onChange, onStart }: Props) {
             </select>
           </label>
         )}
-        <label>
+        <label className="grow">
           {t('practice.source')}
           <select value={s.source} onChange={(e) => set('source', e.target.value)}>
-            {SAMPLES.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
-            <option value="all">{t('practice.allSamples')}</option>
-            <option value="custom">{t('practice.customSource')}</option>
+            {files.length > 0 && (
+              <optgroup label={t('practice.myReferences')}>
+                <option value="ref">{refFile ? t('practice.refSelected', { path: refFile.path }) : t('practice.refNone')}</option>
+                <option value="refRandom">{tp('practice.refRandom', pool)}</option>
+              </optgroup>
+            )}
+            <optgroup label={t('practice.samples')}>
+              {SAMPLES.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+              <option value="all">{t('practice.allSamples')}</option>
+            </optgroup>
+            <optgroup label={t('practice.other')}>
+              <option value="custom">{t('practice.customSource')}</option>
+            </optgroup>
           </select>
         </label>
         <label>
@@ -55,33 +71,8 @@ export function SetupPanel({ settings: s, onChange, onStart }: Props) {
             {(['tolerant', 'exact', 'custom'] as const).map((m) => <option key={m} value={m}>{t(`modes.${m}`)}</option>)}
           </select>
         </label>
-        <label>
-          {t('rules.comments')}
-          <select value={s.comments} onChange={(e) => set('comments', e.target.value as PracticeSettings['comments'])}>
-            <option value="omit">{t('rules.omit')}</option>
-            <option value="include">{t('rules.include')}</option>
-          </select>
-        </label>
-        <label>
-          {t('practice.errorPolicy')}
-          <select value={s.errorPolicy} onChange={(e) => set('errorPolicy', e.target.value as PracticeSettings['errorPolicy'])}>
-            <option value="advance">{t('practice.policies.advance')}</option>
-            <option value="block">{t('practice.policies.block')}</option>
-          </select>
-        </label>
-        <label>
-          {t('practice.idlePause')}
-          <select value={s.idleSec} onChange={(e) => set('idleSec', Number(e.target.value))}>
-            {IDLE_OPTIONS.map((d) => <option key={d} value={d}>{d === 0 ? t('practice.idleOff') : tp('practice.secondsPlural', d)}</option>)}
-          </select>
-        </label>
-        <label className="checkbox">
-          <input type="checkbox" checked={s.autoIndent} onChange={(e) => set('autoIndent', e.target.checked)} />
-          {t('practice.autoIndent')}
-        </label>
       </div>
       <p className="hint">{t(`modeDescriptions.${s.mode}`)}</p>
-      {s.mode === 'custom' && <CustomRules value={s.custom} onChange={(v) => set('custom', v)} />}
       {s.source === 'custom' && (
         <textarea
           className="custom-code"
@@ -91,9 +82,11 @@ export function SetupPanel({ settings: s, onChange, onStart }: Props) {
           onChange={(e) => set('customCode', e.target.value)}
         />
       )}
-      {empty && <p className="bad" role="alert">{t('practice.emptySource')}</p>}
+      {!ready && <p className="bad" role="alert">{t(s.source === 'custom' ? 'practice.emptySource' : 'practice.missingRef')}</p>}
       <div className="actions">
-        <button type="submit" className="primary" disabled={empty} autoFocus>{t('practice.start')}</button>
+        <button type="submit" className="primary" disabled={!ready} autoFocus>{t('practice.start')}</button>
+        <button type="button" onClick={onOpenLibrary}>{t(files.length > 0 ? 'practice.chooseReference' : 'practice.importReferences')}</button>
+        <button type="button" onClick={onOpenSettings}>{t('practice.moreSettings')}</button>
         <span className="hint">{t('practice.startHint')}</span>
       </div>
     </form>
