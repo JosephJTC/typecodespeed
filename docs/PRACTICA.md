@@ -8,12 +8,21 @@ src/snippets/  Ejemplos incluidos y extracción de fragmentos (bloques { ... } c
 src/ui/practice/
   SetupPanel   configuración de la prueba
   TypingView   captura de teclado (textarea oculto) y pantalla de práctica
-  CodeView     código con estado por carácter, cursor y desplazamiento automático
+  CodeView     lo escrito (con sus espacios y saltos) seguido del código pendiente, cursor y desplazamiento automático
   StatsBar     progreso, WPM, precisión, tokens, línea, errores
   Results      resultados al terminar
 ```
 
 `TypingSession` envuelve al `Evaluator` del motor y es la única fuente de verdad: la UI solo traduce eventos de teclado a `input()`, `backspace()`, `wordBackspace()`, `tab()` y `togglePause()`.
+
+## Vista del código
+
+La vista no dibuja la referencia en una posición fija: muestra lo que realmente escribiste y, a continuación, el código pendiente en gris, como la sugerencia de un autocompletado. `buildDisplay()` (`src/engine/display.ts`) la calcula a partir del `Evaluator`.
+
+- Los espacios, saltos y líneas en blanco que escribes aparecen tal cual, y el código pendiente se desplaza después de ellos.
+- Si omites un espacio o un salto opcional, el código pendiente se pega a lo escrito.
+- Un salto de línea que ya escribiste no se vuelve a sugerir, y la indentación sugerida se reduce según lo que ya indentaste.
+- Un carácter incorrecto se muestra en rojo con el carácter esperado; un carácter sobrante, en rojo y tachado; un espacio o salto obligatorio que omitiste, como `␣` o `↵` en rojo.
 
 ## Tipos de prueba
 
