@@ -1,84 +1,120 @@
+import { useId, type ReactElement, type ReactNode } from 'react';
 import { t, tp } from '../../i18n';
 import { CustomRules } from '../components/RuleSelect';
-import { DEFAULT_SETTINGS, FONT_SIZES, IDLE_OPTIONS, type PracticeSettings } from '../practice/config';
+import { DEFAULT_SETTINGS, FONT_SIZES, IDLE_OPTIONS, THEMES, type PracticeSettings } from '../practice/config';
 
 interface Props {
   settings: PracticeSettings;
   onChange: (s: PracticeSettings) => void;
 }
 
+/** One setting: label and help on the left, its control on the right. */
+function Row({ label, help, children }: { label: string; help?: string; children: (id: string) => ReactElement }) {
+  const id = useId();
+  return (
+    <div className="setting-row">
+      <div className="setting-text">
+        <label htmlFor={id}>{label}</label>
+        {help && <p className="hint small">{help}</p>}
+      </div>
+      <div className="setting-control">{children(id)}</div>
+    </div>
+  );
+}
+
+function Group({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="settings-group">
+      <h3>{title}</h3>
+      <div className="card settings-card">{children}</div>
+    </section>
+  );
+}
+
 export function SettingsPage({ settings: s, onChange }: Props) {
   const set = <K extends keyof PracticeSettings>(k: K, v: PracticeSettings[K]) => onChange({ ...s, [k]: v });
+  const toggle = (k: 'autoIndent' | 'autoClose' | 'hideGuide') => (id: string) => (
+    <input id={id} type="checkbox" className="switch" checked={s[k]} onChange={(e) => set(k, e.target.checked)} />
+  );
   return (
     <section className="settings-page">
-      <h2>{t('settings.title')}</h2>
-      <p className="hint">{t('settings.saved')}</p>
+      <header className="page-head">
+        <h2>{t('settings.title')}</h2>
+        <p className="hint">{t('settings.saved')}</p>
+      </header>
 
-      <h3>{t('settings.comparison')}</h3>
-      <div className="controls">
-        <label>
-          {t('lab.mode')}
-          <select value={s.mode} onChange={(e) => set('mode', e.target.value as PracticeSettings['mode'])}>
-            {(['tolerant', 'exact', 'custom'] as const).map((m) => <option key={m} value={m}>{t(`modes.${m}`)}</option>)}
-          </select>
-        </label>
-        <label>
-          {t('rules.comments')}
-          <select value={s.comments} onChange={(e) => set('comments', e.target.value as PracticeSettings['comments'])}>
-            <option value="omit">{t('rules.omit')}</option>
-            <option value="include">{t('rules.include')}</option>
-          </select>
-        </label>
-      </div>
-      <p className="hint">{t(`modeDescriptions.${s.mode}`)}</p>
-      {s.mode === 'custom' && <CustomRules value={s.custom} onChange={(v) => set('custom', v)} />}
+      <Group title={t('settings.comparison')}>
+        <Row label={t('settings.modeLabel')} help={t(`modeDescriptions.${s.mode}`)}>
+          {(id) => (
+            <select id={id} value={s.mode} onChange={(e) => set('mode', e.target.value as PracticeSettings['mode'])}>
+              {(['tolerant', 'exact', 'custom'] as const).map((m) => <option key={m} value={m}>{t(`modes.${m}`)}</option>)}
+            </select>
+          )}
+        </Row>
+        {s.mode === 'custom' && (
+          <div className="setting-row nested">
+            <CustomRules value={s.custom} onChange={(v) => set('custom', v)} />
+          </div>
+        )}
+        <Row label={t('rules.comments')} help={t('settings.commentsHelp')}>
+          {(id) => (
+            <select id={id} value={s.comments} onChange={(e) => set('comments', e.target.value as PracticeSettings['comments'])}>
+              <option value="omit">{t('rules.omit')}</option>
+              <option value="include">{t('rules.include')}</option>
+            </select>
+          )}
+        </Row>
+      </Group>
 
-      <h3>{t('settings.typing')}</h3>
-      <div className="controls">
-        <label>
-          {t('practice.errorPolicy')}
-          <select value={s.errorPolicy} onChange={(e) => set('errorPolicy', e.target.value as PracticeSettings['errorPolicy'])}>
-            <option value="advance">{t('practice.policies.advance')}</option>
-            <option value="block">{t('practice.policies.block')}</option>
-          </select>
-        </label>
-        <label>
-          {t('practice.idlePause')}
-          <select value={s.idleSec} onChange={(e) => set('idleSec', Number(e.target.value))}>
-            {IDLE_OPTIONS.map((d) => <option key={d} value={d}>{d === 0 ? t('practice.idleOff') : tp('practice.secondsPlural', d)}</option>)}
-          </select>
-        </label>
-        <label className="checkbox">
-          <input type="checkbox" checked={s.autoIndent} onChange={(e) => set('autoIndent', e.target.checked)} />
-          {t('practice.autoIndent')}
-        </label>
-        <label className="checkbox">
-          <input type="checkbox" checked={s.autoClose} onChange={(e) => set('autoClose', e.target.checked)} />
-          {t('practice.autoClose')}
-        </label>
-        <label className="checkbox">
-          <input type="checkbox" checked={s.hideGuide} onChange={(e) => set('hideGuide', e.target.checked)} />
-          {t('practice.hideGuide')}
-        </label>
-      </div>
-      {s.hideGuide && <p className="hint">{t('practice.hideGuideHelp')}</p>}
+      <Group title={t('settings.typing')}>
+        <Row label={t('practice.errorPolicy')} help={t('settings.errorPolicyHelp')}>
+          {(id) => (
+            <select id={id} value={s.errorPolicy} onChange={(e) => set('errorPolicy', e.target.value as PracticeSettings['errorPolicy'])}>
+              <option value="advance">{t('practice.policies.advance')}</option>
+              <option value="block">{t('practice.policies.block')}</option>
+            </select>
+          )}
+        </Row>
+        <Row label={t('practice.idlePause')} help={t('settings.idleHelp')}>
+          {(id) => (
+            <select id={id} value={s.idleSec} onChange={(e) => set('idleSec', Number(e.target.value))}>
+              {IDLE_OPTIONS.map((d) => <option key={d} value={d}>{d === 0 ? t('practice.idleOff') : tp('practice.secondsPlural', d)}</option>)}
+            </select>
+          )}
+        </Row>
+        <Row label={t('practice.autoIndent')} help={t('settings.autoIndentHelp')}>{toggle('autoIndent')}</Row>
+        <Row label={t('practice.autoClose')} help={t('settings.autoCloseHelp')}>{toggle('autoClose')}</Row>
+        <Row label={t('practice.hideGuide')} help={t('practice.hideGuideHelp')}>{toggle('hideGuide')}</Row>
+      </Group>
 
-      <h3>{t('settings.appearance')}</h3>
-      <div className="controls">
-        <label>
-          {t('settings.fontSize')}
-          <select value={s.fontSize} onChange={(e) => set('fontSize', Number(e.target.value))}>
-            {FONT_SIZES.map((n) => <option key={n} value={n}>{t('settings.pixels', { count: n })}</option>)}
-          </select>
-        </label>
-      </div>
-      <pre className="preview sample" style={{ fontSize: s.fontSize }}>{'for (int i = 0; i < n; i++) dp[i] = max(dp[i], dp[i - 1] + a[i]);'}</pre>
+      <Group title={t('settings.appearance')}>
+        <Row label={t('settings.theme')} help={t('settings.themeHelp')}>
+          {(id) => (
+            <select id={id} value={s.theme} onChange={(e) => set('theme', e.target.value as PracticeSettings['theme'])}>
+              {THEMES.map((x) => <option key={x} value={x}>{t(`settings.themes.${x}`)}</option>)}
+            </select>
+          )}
+        </Row>
+        <Row label={t('settings.fontSize')} help={t('settings.fontSizeHelp')}>
+          {(id) => (
+            <select id={id} value={s.fontSize} onChange={(e) => set('fontSize', Number(e.target.value))}>
+              {FONT_SIZES.map((n) => <option key={n} value={n}>{t('settings.pixels', { count: n })}</option>)}
+            </select>
+          )}
+        </Row>
+        <pre className="preview sample" style={{ fontSize: s.fontSize }}>{'for (int i = 0; i < n; i++) dp[i] = max(dp[i], dp[i - 1] + a[i]);'}</pre>
+      </Group>
 
-      <h3>{t('settings.data')}</h3>
-      <p className="hint">{t('settings.dataHelp')}</p>
-      <div className="actions">
-        <button onClick={() => window.confirm(t('settings.confirmReset')) && onChange({ ...DEFAULT_SETTINGS, customCode: s.customCode, refPath: s.refPath })}>{t('settings.reset')}</button>
-      </div>
+      <Group title={t('settings.data')}>
+        <div className="setting-row">
+          <div className="setting-text">
+            <p className="hint small">{t('settings.dataHelp')}</p>
+          </div>
+          <div className="setting-control">
+            <button className="danger" onClick={() => window.confirm(t('settings.confirmReset')) && onChange({ ...DEFAULT_SETTINGS, customCode: s.customCode, refPath: s.refPath })}>{t('settings.reset')}</button>
+          </div>
+        </div>
+      </Group>
     </section>
   );
 }

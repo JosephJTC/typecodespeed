@@ -113,9 +113,11 @@ export function GitHubPage({ state, settings, history, onPractice }: Props) {
 
   return (
     <section className="library-page github-page">
-      <h2>{t('github.title')}</h2>
-      <p className="privacy" role="note">{t('github.privacy')}</p>
-      <p>{t('github.intro')}</p>
+      <header className="page-head">
+        <h2>{t('github.title')}</h2>
+        <p className="hint">{t('github.intro')}</p>
+        <p className="privacy" role="note">{t('github.privacy')}</p>
+      </header>
       {state.error && <p className="bad" role="alert">{errorText(state.error)}</p>}
 
       <div className="github-panels">
@@ -157,9 +159,9 @@ export function GitHubPage({ state, settings, history, onPractice }: Props) {
 
       {loaded && (
         <>
-          <p>
+          <p className="library-meta">
             <strong>{loaded.library.name}</strong> · {t(loaded.isPrivate ? 'github.private' : 'github.public')} · {tp('library.fileCount', loaded.library.files.length)}{' '}
-            <button type="button" onClick={state.close}>{t('github.close')}</button>
+            <button type="button" className="small-btn" onClick={state.close}>{t('github.close')}</button>
           </p>
           {loaded.truncated && <p className="hint">{t('github.truncated')}</p>}
           {loaded.capped > 0 && <p className="hint">{tp('github.capped', loaded.capped)}</p>}

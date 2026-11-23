@@ -3,6 +3,7 @@ import { t } from '../../i18n';
 import type { TypingSession } from '../../session';
 import { buildRecord, type TestMeta, type TestRecord } from '../../stats';
 import { saveRecord, useHistory } from '../stats/history';
+import { Icon } from '../components/Icon';
 import { RecordDetail } from '../stats/RecordDetail';
 import { fmt, formatTime, percent } from './format';
 
@@ -52,19 +53,39 @@ export function Results({ session, meta, onRestart, onNext, onSettings }: Props)
 
   return (
     <section className="results" data-testid="results">
-      <h2>{t(`practice.results.${record.finishReason}`)}</h2>
-      <div className="big-stats">
-        <div><span className="big">{fmt(record.wpm)}</span><span>{t('practice.stats.wpm')}</span></div>
-        <div><span className="big">{percent(record.accuracy)}</span><span>{t('practice.stats.accuracy')}</span></div>
-        <div><span className="big">{formatTime(record.durationMs)}</span><span>{t('practice.stats.time')}</span></div>
-      </div>
-      <div className="actions">
-        <button onClick={onRestart}>{t('practice.restart')}</button>
-        {onNext && <button onClick={onNext}>{t('practice.newSnippet')}</button>}
-        <button onClick={onSettings}>{t('practice.settings')}</button>
-      </div>
-      <p className="hint">{t('practice.shortcuts')}</p>
-      <p className={saveFailed ? 'bad' : 'hint'} role="status">
+      <header className="results-head">
+        <div>
+          <h2>{t(`practice.results.${record.finishReason}`)}</h2>
+          <p className="hint small">
+            {record.sourceName} · {t(`practice.types.${record.testType}`)} · {t(`modes.${record.mode}`)}
+            {record.hideGuide && ` · ${t('practice.noGuideTag')}`}
+          </p>
+        </div>
+        <div className="toolbar">
+          <button className="primary" onClick={onRestart} title="Enter">
+            <Icon name="restart" size={15} />
+            {t('practice.restart')}
+          </button>
+          {onNext && (
+            <button onClick={onNext} title="Ctrl+Shift+Enter">
+              <Icon name="next" size={15} />
+              {t('practice.newSnippet')}
+            </button>
+          )}
+          <button className="ghost" onClick={onSettings}>
+            <Icon name="sliders" size={15} />
+            {t('practice.settings')}
+          </button>
+        </div>
+      </header>
+      <dl className="big-stats">
+        <div className="hero"><dt>{t('practice.stats.wpm')}</dt><dd className="big">{fmt(record.wpm)}</dd></div>
+        <div><dt>{t('practice.stats.accuracy')}</dt><dd className="big">{percent(record.accuracy)}</dd></div>
+        <div><dt>{t('practice.stats.time')}</dt><dd className="big">{formatTime(record.durationMs)}</dd></div>
+        <div><dt>{t('practice.results.correctChars')}</dt><dd className="big">{fmt(record.correctChars)}</dd></div>
+        <div><dt>{t('practice.results.errorsMade')}</dt><dd className="big">{fmt(record.errorsMade)}</dd></div>
+      </dl>
+      <p className={saveFailed ? 'bad small' : 'hint small'} role="status">
         {saveFailed ? t('stats.storageError') : worthSaving ? t('stats.saved') : t('stats.notSaved')}
       </p>
       <RecordDetail record={record} history={history.records ?? []} />

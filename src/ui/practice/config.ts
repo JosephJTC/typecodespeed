@@ -30,7 +30,12 @@ export interface PracticeSettings {
   idleSec: number;
   /** Code font size in pixels. */
   fontSize: number;
+  /** Color theme; `system` follows the operating system. */
+  theme: Theme;
 }
+
+export type Theme = 'dark' | 'light' | 'system';
+export const THEMES: Theme[] = ['dark', 'light', 'system'];
 
 export const DURATIONS = [15, 30, 60, 120, 300];
 export const IDLE_OPTIONS = [0, 5, 10, 30];
@@ -54,6 +59,7 @@ export const DEFAULT_SETTINGS: PracticeSettings = {
   hideGuide: false,
   idleSec: 10,
   fontSize: 15,
+  theme: 'dark',
 };
 
 const SETTINGS_KEY = 'typecodespeed.settings';

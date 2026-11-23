@@ -40,12 +40,12 @@ export function LabPage() {
 
   return (
     <div className="lab">
-      <header>
+      <header className="page-head">
         <h2>{t('lab.title')}</h2>
-        <p>{t('lab.intro')}</p>
+        <p className="hint">{t('lab.intro')}</p>
       </header>
 
-      <section className="controls">
+      <section className="controls card">
         <label>
           {t('lab.mode')}
           <select value={mode} onChange={(e) => setMode(e.target.value as ComparisonMode)}>

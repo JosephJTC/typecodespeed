@@ -73,8 +73,10 @@ export function LibraryPage({ state, settings, history, onPractice }: Props) {
 
   return (
     <section className="library-page">
-      <h2>{t('library.title')}</h2>
-      <p className="privacy" role="note">{t('library.privacy')}</p>
+      <header className="page-head">
+        <h2>{t('library.title')}</h2>
+        <p className="privacy" role="note">{t('library.privacy')}</p>
+      </header>
       {state.busy && <p role="status">{t('library.reading')}</p>}
       {state.error && <p className="bad" role="alert">{t(`library.errors.${state.error}`)}</p>}
 
@@ -88,7 +90,7 @@ export function LibraryPage({ state, settings, history, onPractice }: Props) {
         </div>
       ) : (
         <>
-          <p>
+          <p className="library-meta">
             <strong>{library.name}</strong> · {tp('library.fileCount', files.length)} · {t('library.importedAt', { date: formatDate(library.importedAt) })}
             {skipped > 0 && <span className="hint"> · {tp('library.skipped', skipped)}</span>}
           </p>

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { t } from '../../i18n';
 import type { TypingSession } from '../../session';
 import type { TestMeta } from '../../stats';
+import { Icon } from '../components/Icon';
 import { CodeView } from './CodeView';
 import { keyAction } from './keyboard';
 import { Results } from './Results';
@@ -115,7 +116,29 @@ export function TypingView({ session, meta, onRestart, onNext, onSettings }: Pro
 
   return (
     <div className="typing">
-      <StatsBar snapshot={snap} />
+      <div className="typing-head">
+        <StatsBar snapshot={snap} />
+        <div className="toolbar" role="toolbar" aria-label={t('practice.controls')}>
+          <button className="ghost" onClick={onRestart} title="Ctrl+Enter">
+            <Icon name="restart" size={15} />
+            {t('practice.restart')}
+          </button>
+          {onNext && (
+            <button className="ghost" onClick={onNext} title="Ctrl+Shift+Enter">
+              <Icon name="next" size={15} />
+              {t('practice.newSnippet')}
+            </button>
+          )}
+          <button className="ghost" onClick={() => session.abort()}>
+            <Icon name="stop" size={15} />
+            {t('practice.finish')}
+          </button>
+          <button className="ghost" onClick={onSettings}>
+            <Icon name="sliders" size={15} />
+            {t('practice.settings')}
+          </button>
+        </div>
+      </div>
       <div className="typing-area" onMouseDown={focusInput}>
         <textarea
           ref={inputRef}
@@ -149,15 +172,11 @@ export function TypingView({ session, meta, onRestart, onNext, onSettings }: Pro
         {snap.status === 'paused' && <div className="overlay" role="status">{t(`practice.paused.${snap.pauseReason ?? 'user'}`)}</div>}
         {!focused && snap.status !== 'paused' && <div className="overlay" role="status">{t('practice.focusHint')}</div>}
       </div>
-      <p className="hint">
-        {notice || (snap.status === 'ready' ? t(session.hideGuide ? 'practice.noGuideTyping' : 'practice.typingHint') : `${t('practice.stats.time')}: ${formatTime(snap.elapsedMs)}`)}
-      </p>
-      <p className="hint shortcuts">{t('practice.shortcuts')}</p>
-      <div className="actions">
-        <button onClick={onRestart}>{t('practice.restart')}</button>
-        {onNext && <button onClick={onNext}>{t('practice.newSnippet')}</button>}
-        <button onClick={() => session.abort()}>{t('practice.finish')}</button>
-        <button onClick={onSettings}>{t('practice.settings')}</button>
+      <div className="typing-foot">
+        <p className={notice ? 'bad small' : 'hint small'}>
+          {notice || (snap.status === 'ready' ? t(session.hideGuide ? 'practice.noGuideTyping' : 'practice.typingHint') : `${t('practice.stats.time')}: ${formatTime(snap.elapsedMs)}`)}
+        </p>
+        <p className="hint shortcuts">{t('practice.shortcuts')}</p>
       </div>
     </div>
   );
