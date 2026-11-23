@@ -1,5 +1,5 @@
 import { buildDisplay, buildTarget, closerOfOpener, Evaluator, type Display, type ErrorKind, type KeystrokeResult, type PendingChar, type Target, type TokenType } from '../engine';
-import { CLOSER_OF, closesBefore, EditorBuffer, inLiteral, isCloser, isOpener, openerOf, type Motion } from '../editor';
+import { CLOSER_OF, closesBefore, EditorBuffer, inLiteral, isCloser, isEscaped, isOpener, isQuote, opensQuote, openerOf, type Motion } from '../editor';
 import type { FinishReason, KeystrokeLog, PauseReason, SessionConfig, SessionSnapshot, SessionStatus } from './types';
 
 const CHARS_PER_WORD = 5;
@@ -144,7 +144,7 @@ export class TypingSession {
       if (c === 0) return false;
       const prev = ed.cells[c - 1];
       const next = ed.cells[c];
-      if (next?.ahead && isOpener(prev.ch) && next.ch === CLOSER_OF[prev.ch]) {
+      if (next?.ahead && ((isOpener(prev.ch) && next.ch === CLOSER_OF[prev.ch]) || (isQuote(prev.ch) && next.ch === prev.ch))) {
         ed.delete(c - 1, c + 1);
         return true;
       }
@@ -373,9 +373,32 @@ export class TypingSession {
 
   private afterAction(): void {
     if (this._status !== 'running') return;
+    if (!this.evaluator.complete) this.acceptInsertedEnd();
     if (!this.evaluator.complete || !this.lastCharCorrect()) return;
     if (this.config.timeLimitMs && this.config.nextText) this.nextSegment();
     else this.finish('completed');
+  }
+
+  /**
+   * With the cursor right before the characters the editor inserted ahead
+   * (`return 0;|` + `\n}`), if those characters complete the text exactly they
+   * count as written, as inserted characters (not keystrokes), and the text ends.
+   */
+  private acceptInsertedEnd(): void {
+    const ed = this.editor;
+    const start = this.pendingStart();
+    const end = ed.cells.length;
+    if (start === end || ed.hasSelection || ed.cursor !== start) return;
+    const ev = this.evaluator;
+    let ok = true;
+    for (let i = start; i < end; i++) if (ev.push(ed.cells[i].ch).status === 'error') ok = false;
+    ok = ok && ev.complete && this.lastCharCorrect();
+    for (let i = start; i < end; i++) ev.pop();
+    if (!ok) return;
+    ed.accept(start, end);
+    this.sync();
+    for (let i = start; i < end; i++) this.record('char', ed.cells[i].ch, this.results[i], true);
+    ed.setCursor(end);
   }
 
   /** Offset of the first character inserted ahead of the user (not evaluated yet). */
@@ -453,10 +476,15 @@ export class TypingSession {
     const frontier = !ed.hasSelection && ed.cursor >= this.pendingStart();
     const [from, to] = ed.selection;
     const closer = !ed.hasSelection && isCloser(ch) ? this.aheadCloser(ch) : -1;
+    const quote = !ed.hasSelection && isQuote(ch) && ed.cells[ed.cursor]?.ahead && ed.cells[ed.cursor].ch === ch && !isEscaped(ed.text, ed.cursor);
     const blockEnd = ch === '\n' && frontier ? this.blockEnd() : -1;
     if (closer >= 0) {
       // Type over the closing bracket the editor inserted (dropping the line break it had to itself).
       ed.delete(ed.cursor, closer);
+      ed.markTyped(ed.cursor);
+      ed.setCursor(ed.cursor + 1);
+    } else if (quote) {
+      // Type over the closing quote the editor inserted.
       ed.markTyped(ed.cursor);
       ed.setCursor(ed.cursor + 1);
     } else if (blockEnd >= 0) {
@@ -466,6 +494,9 @@ export class TypingSession {
     } else if (this.config.autoClose && isOpener(ch) && closesBefore(ed.cells[to]?.ch) && !inLiteral(ed.text, from)) {
       ed.insert(ch);
       ed.insertAt(ed.cursor, CLOSER_OF[ch], 'ahead');
+    } else if (this.config.autoClose && isQuote(ch) && opensQuote(ed.text, from, ed.cells[to]?.ch)) {
+      ed.insert(ch);
+      ed.insertAt(ed.cursor, ch, 'ahead');
     } else {
       ed.insert(ch);
     }
@@ -562,6 +593,7 @@ export class TypingSession {
     }
     let j = 0;
     return cells.slice(start).map((cell) => {
+      if (isQuote(cell.ch)) return { ch: cell.ch, item: this.closingQuote(cell.ch, start) };
       if (!isCloser(cell.ch)) return { ch: cell.ch, item: -1 };
       const o = open[open.length - 1 - j++];
       const r = o === undefined ? undefined : this.results[o];
@@ -569,6 +601,22 @@ export class TypingSession {
       const it = closer === undefined ? undefined : items[closer];
       return { ch: cell.ch, item: it?.kind === 'char' && it.ch === cell.ch ? closer! : -1 };
     });
+  }
+
+  /** Target item of the quote that closes the literal being typed (opened before `start`), or -1. */
+  private closingQuote(ch: string, start: number): number {
+    const items = this.target.items;
+    for (let i = start - 1; i >= 0; i--) {
+      const r = this.results[i];
+      const it = items[r.item];
+      if (it?.kind !== 'char' || !LITERAL_TOKENS.has(it.tokenType)) return -1;
+      if (this.editor.cells[i].ch !== ch || r.status !== 'correct') continue;
+      const range = this.tokenRanges.get(it.token);
+      const end = range?.[1] ?? -1;
+      const last = items[end];
+      return range && r.item < end && last?.kind === 'char' && last.ch === ch ? end : -1;
+    }
+    return -1;
   }
 
   /** Correct characters of the current text that the user typed (not inserted by the editor). */

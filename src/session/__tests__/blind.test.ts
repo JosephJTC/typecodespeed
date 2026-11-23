@@ -40,9 +40,8 @@ describe('modo sin guía', () => {
     expect(shown(s)).toMatchObject({ before: 'int main() {', after: '}' });
     s.input('\n');
     expect(shown(s)).toMatchObject({ before: 'int main() {\n    ', after: '\n}' });
-    s.input('return 0;');
-    expect(shown(s).text).not.toContain('return 0;\n}\n');
-    expect(shown(s)).toMatchObject({ before: 'int main() {\n    return 0;', after: '\n}' });
+    s.input('return 0');
+    expect(shown(s)).toMatchObject({ before: 'int main() {\n    return 0', after: '\n}' });
   });
 
   it('un error muestra la tecla escrita, no la esperada, y se cuenta igual', () => {
