@@ -1,4 +1,5 @@
 import type { CompareOptions, WhitespaceRules } from '../../engine';
+import { DEFAULT_LEARN, sanitizeLearn, type LearnSettings } from '../../learn/settings';
 import type { ErrorPolicy, SessionConfig } from '../../session';
 import type { TestMeta, TestType } from '../../stats';
 import { filterFiles, pickRandomFile, type FileQuery, type Library, type RefFile } from '../../library';
@@ -32,6 +33,8 @@ export interface PracticeSettings {
   fontSize: number;
   /** Color theme; `system` follows the operating system. */
   theme: Theme;
+  /** Keyboard and guidance preferences of the Learn section. */
+  learn: LearnSettings;
 }
 
 export type Theme = 'dark' | 'light' | 'system';
@@ -60,6 +63,7 @@ export const DEFAULT_SETTINGS: PracticeSettings = {
   idleSec: 10,
   fontSize: 15,
   theme: 'dark',
+  learn: DEFAULT_LEARN,
 };
 
 const SETTINGS_KEY = 'typecodespeed.settings';
@@ -82,6 +86,7 @@ export function parseSettings(json: string | null): PracticeSettings {
   if (isGitHubSource(out.source as string)) out.source = DEFAULT_SETTINGS.source;
   out.ghPath = '';
   out.ghQuery = {};
+  out.learn = sanitizeLearn(out.learn as LearnSettings);
   return out as unknown as PracticeSettings;
 }
 

@@ -445,3 +445,94 @@ button.file.active { background: var(--accent-soft); color: var(--accent); }
 @media (max-width: 760px) {
   .setup-actions kbd { display: none; }
 }
+
+/* ===== Learn ===== */
+:root {
+  --f-l-pinky: #e5727a; --f-l-ring: #e39a4c; --f-l-middle: #d3b93f; --f-l-index: #63b86a;
+  --f-r-index: #45b3bf; --f-r-middle: #5b9cff; --f-r-ring: #9a80ea; --f-r-pinky: #d572c2;
+  --f-l-thumb: #8d95a8; --f-r-thumb: #8d95a8;
+}
+.f-l-pinky { --f: var(--f-l-pinky); } .f-l-ring { --f: var(--f-l-ring); } .f-l-middle { --f: var(--f-l-middle); } .f-l-index { --f: var(--f-l-index); }
+.f-r-index { --f: var(--f-r-index); } .f-r-middle { --f: var(--f-r-middle); } .f-r-ring { --f: var(--f-r-ring); } .f-r-pinky { --f: var(--f-r-pinky); }
+.f-l-thumb { --f: var(--f-l-thumb); } .f-r-thumb { --f: var(--f-r-thumb); }
+
+.learn-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 16px; }
+.learn-bar .chip, .segments button.chip { border: 0; background: transparent; }
+.segments button.chip.active { background: var(--surface); }
+.learn-next { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px; }
+.learn-next > div { flex: 1 1 340px; display: flex; flex-direction: column; gap: 6px; }
+.stage h3 { margin: 22px 0 8px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.lesson-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+button.lesson {
+  flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 12px; text-align: left; white-space: normal;
+  background: var(--surface); border-left: 3px solid var(--border-strong);
+}
+button.lesson.passed { border-left-color: var(--good); }
+button.lesson.tried { border-left-color: var(--warn); }
+button.lesson.next { border-left-color: var(--accent); }
+.lesson-name { font-weight: 600; }
+.lesson-status { font-size: 0.75rem; font-weight: 400; color: var(--muted); }
+.learn-note { margin-top: 20px; max-width: 820px; }
+
+.menu { position: relative; }
+.menu > summary {
+  display: inline-flex; align-items: center; gap: 6px; list-style: none; cursor: pointer; user-select: none;
+  padding: 6px 9px; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 500; color: var(--muted); border: 1px solid transparent;
+}
+.menu > summary::-webkit-details-marker { display: none; }
+.menu > summary:hover, .menu[open] > summary { background: var(--surface-2); border-color: var(--border); color: var(--text); }
+.menu-panel { position: absolute; right: 0; top: calc(100% + 6px); z-index: 10; width: min(320px, 86vw); display: flex; flex-direction: column; gap: 10px; padding: 14px; }
+.menu-panel select { width: 100%; }
+
+.learn-exercise { display: flex; flex-direction: column; gap: 12px; }
+.lesson-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.drill {
+  position: relative; z-index: 1; margin: 0; cursor: text; padding: 18px 20px; min-height: 5.2em;
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow);
+  font-family: var(--mono); font-size: clamp(1.15rem, 2.2vw, 1.5rem); line-height: 1.7; letter-spacing: 0.03em; white-space: pre-wrap; overflow-wrap: anywhere;
+}
+.drill.focused { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
+.d-done { color: var(--ch-correct); }
+.d-slip { text-decoration: underline; text-decoration-color: var(--bad); text-underline-offset: 4px; }
+.d-pending { color: var(--ch-pending); }
+.d-current { background: var(--accent-soft); box-shadow: 0 2px 0 var(--accent); border-radius: 3px; }
+.d-current.d-wrong { background: var(--bad-soft); box-shadow: 0 2px 0 var(--bad); }
+.instruction { min-height: 1.5em; font-size: 0.9rem; font-weight: 500; text-align: center; }
+.instruction.bad { font-weight: 500; }
+.guide { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 28px; }
+.kb { flex: 1 1 420px; max-width: 760px; min-width: 0; height: auto; display: block; }
+.kb-key rect, .kb-key path { fill: var(--surface-2); stroke: var(--border-strong); stroke-width: 1; transition: fill 120ms; }
+.kb-key text { fill: var(--muted); font-size: 13px; font-family: var(--font); font-weight: 500; pointer-events: none; }
+.kb-key text.small { font-size: 9px; }
+.kb-key.unassigned text { fill: var(--faint); }
+.kb-key.tinted rect, .kb-key.tinted path { fill: color-mix(in srgb, var(--f) 22%, var(--surface-2)); stroke: color-mix(in srgb, var(--f) 45%, var(--border-strong)); }
+.kb-key.tinted text { fill: var(--text); }
+.kb-key.target rect, .kb-key.target path { fill: var(--f, var(--accent)); stroke: var(--text); stroke-width: 1.5; }
+.kb-key.target text { fill: #10131a; font-weight: 700; }
+.kb-key .bump { stroke: currentColor; color: var(--muted); stroke-width: 2; stroke-linecap: round; }
+.hands { flex: 0 1 280px; min-width: 180px; height: auto; display: block; }
+.hands .palm, .hands .finger rect { fill: var(--surface-3); stroke: var(--border-strong); stroke-width: 1; }
+.hands .finger.on rect { fill: var(--f); stroke: var(--text); }
+.hands.animated .finger { transition: transform 180ms ease-out; }
+.hands .hand { opacity: 0.6; }
+.hands .hand.active { opacity: 1; }
+.learn-result { display: flex; flex-direction: column; gap: 12px; }
+.learn-result h3 { margin: 0; font-size: 1.1rem; }
+.big-stats.compact { margin: 0; box-shadow: none; }
+.big-stats.compact .big { font-size: 1.25rem; }
+.big-stats.compact .hero .big { font-size: 1.7rem; }
+.keyboard-config { display: flex; flex-direction: column; gap: 12px; }
+.config-card { display: flex; flex-direction: column; gap: 10px; }
+.detector { display: flex; flex-direction: column; gap: 8px; border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); }
+.detect-step { font-size: 1rem; font-weight: 600; }
+.detector .actions { margin-top: 2px; }
+.learn-progress h3 small { margin-left: 6px; }
+@media (max-width: 760px) {
+  .drill { padding: 12px 14px; }
+  .hands { flex-basis: 200px; }
+  .learn-next button.large { width: 100%; white-space: normal; }
+  .tab, .app.collapsed .tab { font-size: 0.6rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hands.animated .finger, .kb-key rect, .kb-key path { transition: none; }
+}

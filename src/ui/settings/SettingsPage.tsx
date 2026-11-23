@@ -111,7 +111,7 @@ export function SettingsPage({ settings: s, onChange }: Props) {
             <p className="hint small">{t('settings.dataHelp')}</p>
           </div>
           <div className="setting-control">
-            <button className="danger" onClick={() => window.confirm(t('settings.confirmReset')) && onChange({ ...DEFAULT_SETTINGS, customCode: s.customCode, refPath: s.refPath })}>{t('settings.reset')}</button>
+            <button className="danger" onClick={() => window.confirm(t('settings.confirmReset')) && onChange({ ...DEFAULT_SETTINGS, customCode: s.customCode, refPath: s.refPath, learn: s.learn })}>{t('settings.reset')}</button>
           </div>
         </div>
       </Group>
