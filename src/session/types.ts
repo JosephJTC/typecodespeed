@@ -26,6 +26,8 @@ export interface SessionConfig {
    * inserts its closing bracket after the cursor; typing that bracket types over it.
    */
   autoClose?: boolean;
+  /** Once the user starts typing a text, the pending reference code is no longer drawn (see `display`). */
+  hideGuide?: boolean;
   /** Pauses the clock after this much inactivity (the idle time is not counted). 0 disables it. */
   idleTimeoutMs: number;
   /** Clock in milliseconds; injectable for tests. */

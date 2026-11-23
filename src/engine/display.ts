@@ -32,6 +32,11 @@ export interface DisplayOptions {
   cursor?: number;
   /** Other end of the selection; defaults to `cursor`. */
   anchor?: number;
+  /**
+   * Draws only what is in the editor (no pending reference code) and incorrect
+   * characters as typed instead of as expected, so the reference is not revealed.
+   */
+  hidePending?: boolean;
 }
 
 const SPACE_MARK = '␣';
@@ -61,6 +66,7 @@ export function ghostWhitespace(ref: string, typed: string): string {
 export function buildDisplay(ev: Evaluator, options: DisplayOptions = {}): Display {
   const { items, text: source } = ev.target;
   const pending = options.pending ?? [];
+  const blind = options.hidePending ?? false;
   const typedAt = new Map<number, Array<[string, DisplayCode]>>();
   const freeAt = new Map<number, string>();
   for (const k of ev.typed) {
@@ -94,7 +100,7 @@ export function buildDisplay(ev: Evaluator, options: DisplayOptions = {}): Displ
     if (item.kind === 'gap') {
       if (state === 'missed') put(item.requireNewline ? NEWLINE_MARK : SPACE_MARK, 'm');
     } else if (state === 'correct') put(item.ch, 'c', true);
-    else if (state === 'incorrect') put(mark(item.ch), 'i', true);
+    else if (state === 'incorrect') put(mark(blind ? (ev.typed[offsets.length]?.ch ?? item.ch) : item.ch), 'i', true);
     else if (state === 'missed') put(mark(item.ch), 'm');
   }
   putTyped(ev.pos);
@@ -103,12 +109,13 @@ export function buildDisplay(ev: Evaluator, options: DisplayOptions = {}): Displ
   const frontier = text.length;
 
   const current = items[ev.pos];
-  const inGhost = (p: PendingChar) => current !== undefined && p.item >= ev.pos && items[p.item]?.kind === 'char';
-  const hidden = (p: PendingChar) => p.ch === ' ' || p.ch === '\t' || p.ch === '\n';
+  // Without the pending code, inserted characters are drawn where they are in the editor, whitespace included.
+  const inGhost = (p: PendingChar) => !blind && current !== undefined && p.item >= ev.pos && items[p.item]?.kind === 'char';
+  const hidden = (p: PendingChar) => !blind && (p.ch === ' ' || p.ch === '\t' || p.ch === '\n');
   for (const p of pending) if (!inGhost(p) && !hidden(p)) put(p.ch, 'a');
 
   const pendingAt: number[] = [];
-  if (current) {
+  if (current && !blind) {
     let from = current.src;
     if (current.kind === 'gap') {
       put(ghostWhitespace(source.slice(current.src, current.srcEnd), freeAt.get(ev.pos) ?? ''), 'p');

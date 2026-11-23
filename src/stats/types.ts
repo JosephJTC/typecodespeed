@@ -44,6 +44,8 @@ export interface TestMeta {
   comments: 'include' | 'omit';
   errorPolicy: ErrorPolicy;
   timeLimitMs?: number;
+  /** The pending code was hidden while typing. */
+  hideGuide?: boolean;
 }
 
 /** Everything stored about a finished test. Computed from the recorded keystroke log. */

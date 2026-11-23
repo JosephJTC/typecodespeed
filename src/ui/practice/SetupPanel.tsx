@@ -82,6 +82,11 @@ export function SetupPanel({ settings: s, files, repo, ready, onChange, onStart,
         </label>
       </div>
       <p className="hint">{t(`modeDescriptions.${s.mode}`)}</p>
+      <label className="checkbox">
+        <input type="checkbox" checked={s.hideGuide} onChange={(e) => set('hideGuide', e.target.checked)} />
+        {t('practice.hideGuide')}
+      </label>
+      {s.hideGuide && <p className="hint">{t('practice.hideGuideHelp')}</p>}
       {s.source === 'custom' && (
         <textarea
           className="custom-code"
