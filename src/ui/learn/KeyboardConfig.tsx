@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { t } from '../../i18n';
-import { DETECT_STEPS, detectLayout, LAYOUT_IDS, LAYOUTS, SIZE_IDS, type Detection, type Geometry, type Hand, type KeySample, type LayoutId, type LearnSettings, type SizeId } from '../../learn';
+import { DETECT_STEPS, detectLayout, GEOMETRIES, LAYOUT_IDS, LAYOUTS, SIZE_IDS, type Detection, type Geometry, type Hand, type KeySample, type LayoutId, type LearnSettings, type SizeId } from '../../learn';
 import { KeyboardView } from './KeyboardView';
 import type { Keyboard } from './useKeyboard';
 
@@ -81,7 +81,7 @@ export function KeyboardConfig({ settings: s, keyboard, onChange }: Props) {
           <label>
             {t('learn.config.geometry')}
             <select value={s.geometry} onChange={(e) => onChange({ ...s, geometry: e.target.value as Geometry })}>
-              {(['ansi', 'iso'] as const).map((g) => <option key={g} value={g}>{t(`learn.config.geometries.${g}`)}</option>)}
+              {GEOMETRIES.map((g) => <option key={g} value={g}>{t(`learn.config.geometries.${g}`)}</option>)}
             </select>
           </label>
           <label>

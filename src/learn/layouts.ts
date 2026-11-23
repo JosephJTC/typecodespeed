@@ -4,8 +4,13 @@
  */
 
 export type LayoutId = 'es-latam' | 'es-es' | 'en-us' | 'en-uk';
-/** Shape of the alphanumeric block: ANSI (wide Enter) or ISO (tall Enter and a key next to the left Shift). */
-export type Geometry = 'ansi' | 'iso';
+/**
+ * Shape of the alphanumeric block: ANSI (wide Enter), ISO (tall Enter and a
+ * key next to the left Shift), or hybrid (wide Enter plus the key next to the
+ * left Shift, common on Latin American laptops).
+ */
+export type Geometry = 'ansi' | 'iso' | 'hybrid';
+export const GEOMETRIES: Geometry[] = ['ansi', 'iso', 'hybrid'];
 export type DeadMark = 'acute' | 'grave' | 'diaeresis' | 'circumflex';
 
 /** Characters of a key by level; a `DeadMark` is a dead key that combines with the next letter. */

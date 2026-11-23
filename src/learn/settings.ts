@@ -56,7 +56,7 @@ export function sanitizeLearn(s: LearnSettings): LearnSettings {
   const d = DEFAULT_LEARN;
   return {
     layout: pick(s.layout, Object.keys(LAYOUTS) as LayoutId[], d.layout),
-    geometry: pick(s.geometry, ['ansi', 'iso'], d.geometry),
+    geometry: pick(s.geometry, ['ansi', 'iso', 'hybrid'], d.geometry),
     size: pick(s.size, ['full', 'tkl', '75', '65', '60', 'laptop'], d.size),
     spaceThumb: pick(s.spaceThumb, ['left', 'right'], d.spaceThumb),
     fingerGuide: typeof s.fingerGuide === 'boolean' ? s.fingerGuide : d.fingerGuide,

@@ -34,7 +34,7 @@ const setup = (layout: LayoutId, size = 'tkl' as (typeof SIZE_IDS)[number], geom
 };
 
 describe('distribuciones y tamaños', () => {
-  it.each(SIZE_IDS.flatMap((s) => (['ansi', 'iso'] as const).map((g) => [s, g] as const)))('%s %s: teclas únicas, sin solaparse y con las letras', (size, geometry) => {
+  it.each(SIZE_IDS.flatMap((s) => (['ansi', 'iso', 'hybrid'] as const).map((g) => [s, g] as const)))('%s %s: teclas únicas, sin solaparse y con las letras', (size, geometry) => {
     const { keys, width, height } = buildBoard(size, geometry);
     expect(new Set(keys.map((k) => k.code)).size).toBe(keys.length);
     for (const k of keys) expect(k.x + k.w).toBeLessThanOrEqual(width + 1e-9);
@@ -48,7 +48,9 @@ describe('distribuciones y tamaños', () => {
       }
     }
     for (const code of ['KeyQ', 'KeyA', 'KeyZ', 'KeyM', 'Semicolon', 'Space', 'Enter', 'ShiftLeft', 'ShiftRight', 'Backspace', 'Tab']) expect(keys.some((k) => k.code === code), code).toBe(true);
-    expect(keys.some((k) => k.code === 'IntlBackslash')).toBe(geometry === 'iso');
+    expect(keys.some((k) => k.code === 'IntlBackslash')).toBe(geometry !== 'ansi');
+    expect(keys.find((k) => k.code === 'Enter')!.isoEnter ?? false).toBe(geometry === 'iso');
+    expect(keys.find((k) => k.code === 'Backslash')!.y).toBe(keys.find((k) => k.code === (geometry === 'iso' ? 'KeyA' : 'KeyQ'))!.y);
   });
 
   it('cada tamaño tiene los bloques que le corresponden', () => {
@@ -101,6 +103,9 @@ describe('dedos', () => {
   it('la forma y las preferencias cambian la asignación', () => {
     expect(fingerMap('en-us', 'ansi', { spaceThumb: 'right' }).has('IntlBackslash')).toBe(false);
     expect(fingerMap('es-latam', 'iso', { spaceThumb: 'right' }).get('IntlBackslash')).toBe('l-pinky');
+    expect(fingerMap('es-latam', 'hybrid', { spaceThumb: 'right' }).get('IntlBackslash')).toBe('l-pinky');
+    expect(setup('es-latam', 'tkl', 'hybrid').map.get('<')).toEqual([{ code: 'IntlBackslash' }]);
+    expect(setup('es-latam', 'tkl', 'hybrid').map.get('}')).toEqual([{ code: 'Backslash' }]);
     expect(fingerMap('es-latam', 'iso', { spaceThumb: 'left' }).get('Space')).toBe('l-thumb');
   });
 
