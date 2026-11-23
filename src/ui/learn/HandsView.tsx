@@ -2,7 +2,7 @@ import { t } from '../../i18n';
 import { handOf, type Board, type Finger, type Press } from '../../learn';
 
 /** Key each finger rests on. */
-export const HOME_KEY: Readonly<Record<Finger, string>> = {
+const HOME_KEY: Readonly<Record<Finger, string>> = {
   'l-pinky': 'KeyA',
   'l-ring': 'KeyS',
   'l-middle': 'KeyD',
