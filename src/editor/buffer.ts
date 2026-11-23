@@ -159,6 +159,12 @@ export class EditorBuffer {
     return i;
   }
 
+  /** Marks `[from, to)` as inserted ahead of the user (left out of the evaluation until typed past). */
+  defer(from: number, to: number): void {
+    for (let i = from; i < to; i++) this.cells[i] = { ...this.cells[i], ahead: true };
+    this.touch(from);
+  }
+
   /** Copy of the content, cursor and selection, for `restore`. */
   save(): { cells: Cell[]; cursor: number; anchor: number } {
     return { cells: this.cells.map((c) => ({ ...c })), cursor: this.cursor, anchor: this.anchor };

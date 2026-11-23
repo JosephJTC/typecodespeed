@@ -1,5 +1,6 @@
 import { memo, useLayoutEffect, useRef } from 'react';
 import type { Display, DisplayCode } from '../../engine';
+import { scrollDelta } from './scroll';
 
 const CLASS: Record<DisplayCode, string> = {
   c: 'ch-correct',
@@ -34,8 +35,9 @@ export function CodeView({ display, version, focused }: Props) {
   const caretLine = lines.findIndex((l) => caret >= l.start && caret <= l.end);
 
   useLayoutEffect(() => {
-    const el = containerRef.current?.querySelector('.caret');
-    if (el && 'scrollIntoView' in el) (el as HTMLElement).scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    const view = containerRef.current;
+    const el = view?.querySelector<HTMLElement>('.caret');
+    if (view && el) followCaret(view, el);
   }, [version, caretLine]);
 
   return (
@@ -53,6 +55,16 @@ export function CodeView({ display, version, focused }: Props) {
       ))}
     </div>
   );
+}
+
+/** Keeps the caret in view with several lines of the code that follows (or precedes) it visible. */
+function followCaret(view: HTMLElement, caret: HTMLElement) {
+  const v = view.getBoundingClientRect();
+  const c = caret.getBoundingClientRect();
+  view.scrollTop += scrollDelta(v.top, v.bottom, c.top, c.bottom, v.height / 3);
+  view.scrollLeft += scrollDelta(v.left, v.right, c.left, c.right, 48);
+  const page = scrollDelta(0, window.innerHeight, v.top, v.bottom, 0);
+  if (page && caret.scrollIntoView) caret.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 }
 
 interface LineProps {
