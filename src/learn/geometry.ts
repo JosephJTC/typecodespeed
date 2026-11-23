@@ -47,13 +47,14 @@ const F_KEYS = keys('F', '1 2 3 4 5 6 7 8 9 10 11 12');
 
 /** The four letter rows, 15 units wide, in the given shape. `rightShift` is the width of the right Shift. */
 function alpha(geometry: Geometry, y: number, first: string, rightShift = 2.75): PlacedKey[] {
-  const iso = geometry === 'iso';
+  const isoEnter = geometry === 'iso';
+  const extraKey = geometry !== 'ansi';
   return [
     ...row(y, [first, ...NUMBERS, ['Backspace', 2]]),
-    ...row(y + 1, [['Tab', 1.5], ...TOP, ...(iso ? [] : [['Backslash', 1.5] as Spec])]),
-    ...row(y + 2, [['CapsLock', 1.75], ...HOME, ...(iso ? ['Backslash'] : [['Enter', 2.25] as Spec])]),
-    ...(iso ? [{ code: 'Enter', x: 13.5, y: y + 1, w: 1.5, h: 2, isoEnter: true }] : []),
-    ...row(y + 3, [...(iso ? [['ShiftLeft', 1.25] as Spec, 'IntlBackslash'] : [['ShiftLeft', 2.25] as Spec]), ...BOTTOM, ['ShiftRight', rightShift]]),
+    ...row(y + 1, [['Tab', 1.5], ...TOP, ...(isoEnter ? [] : [['Backslash', 1.5] as Spec])]),
+    ...row(y + 2, [['CapsLock', 1.75], ...HOME, ...(isoEnter ? ['Backslash'] : [['Enter', 2.25] as Spec])]),
+    ...(isoEnter ? [{ code: 'Enter', x: 13.5, y: y + 1, w: 1.5, h: 2, isoEnter: true }] : []),
+    ...row(y + 3, [...(extraKey ? [['ShiftLeft', 1.25] as Spec, 'IntlBackslash'] : [['ShiftLeft', 2.25] as Spec]), ...BOTTOM, ['ShiftRight', rightShift]]),
   ];
 }
 

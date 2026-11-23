@@ -387,8 +387,12 @@ export const es = {
         'en-uk': 'Inglés (Reino Unido)',
       },
       geometry: 'Forma',
-      geometries: { ansi: 'ANSI (Enter horizontal)', iso: 'ISO (Enter alto y tecla junto al Shift izquierdo)' },
-      geometryShort: { ansi: 'ANSI', iso: 'ISO' },
+      geometries: {
+        ansi: 'ANSI (Enter horizontal)',
+        iso: 'ISO (Enter alto y tecla junto al Shift izquierdo)',
+        hybrid: 'Enter horizontal y tecla junto al Shift izquierdo',
+      },
+      geometryShort: { ansi: 'ANSI', iso: 'ISO', hybrid: 'Enter horizontal con tecla junto al Shift' },
       size: 'Tamaño',
       sizes: {
         full: 'Completo (100 %)',
@@ -406,7 +410,7 @@ export const es = {
     detect: {
       start: 'Detectar mi teclado',
       title: 'Detección guiada',
-      explain: 'Presiona las teclas que se piden. El navegador solo informa la posición y el carácter de cada tecla, no el modelo del teclado, así que el resultado es una propuesta que puedes corregir. El tamaño no se puede detectar: elígelo tú.',
+      explain: 'Presiona las teclas que se piden. El navegador solo informa la posición y el carácter de cada tecla, no el modelo del teclado, así que el resultado es una propuesta que puedes corregir. El tamaño no se puede detectar: elígelo tú. Tampoco se distingue el Enter alto del horizontal: si tu Enter es horizontal y tienes una tecla junto al Shift izquierdo, elige esa forma a mano.',
       step: 'Paso {n} de {total}',
       steps: {
         nextToShift: 'Presiona la tecla que está justo a la derecha del Shift izquierdo.',

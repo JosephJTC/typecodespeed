@@ -34,6 +34,8 @@ const BY_GEOMETRY: Readonly<Record<Geometry, Readonly<Record<string, Finger>>>> 
   ansi: { Backslash: 'r-pinky' },
   // ISO: an extra key next to the left Shift, and the key left of Enter on the home row.
   iso: { IntlBackslash: 'l-pinky', Backslash: 'r-pinky' },
+  // Hybrid: the key next to the left Shift, with Backslash above a wide Enter.
+  hybrid: { IntlBackslash: 'l-pinky', Backslash: 'r-pinky' },
 };
 
 /** Per-layout exceptions to the standard assignment; none of the bundled layouts needs one yet. */
