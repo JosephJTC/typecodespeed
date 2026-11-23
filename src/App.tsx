@@ -4,6 +4,7 @@ import { Icon } from './ui/components/Icon';
 import { GitHubPage } from './ui/github/GitHubPage';
 import { useGitHub } from './ui/github/useGitHub';
 import { LabPage } from './ui/lab/LabPage';
+import { LearnPage } from './ui/learn/LearnPage';
 import { LibraryPage } from './ui/library/LibraryPage';
 import { useLibrary } from './ui/library/useLibrary';
 import { loadSettings, saveSettings, type PracticeSettings, type Theme } from './ui/practice/config';
@@ -13,7 +14,7 @@ import { useHistory } from './ui/stats/history';
 import { StatsPage } from './ui/stats/StatsPage';
 import './index.css';
 
-const PAGES = ['practice', 'library', 'github', 'stats', 'settings', 'lab'] as const;
+const PAGES = ['practice', 'learn', 'library', 'github', 'stats', 'settings', 'lab'] as const;
 type Page = (typeof PAGES)[number];
 
 const COLLAPSED_KEY = 'typecodespeed.sidebar';
@@ -100,6 +101,7 @@ export default function App() {
         {page === 'practice' && (
           <PracticePage settings={settings} files={files} repo={github.repo?.library ?? null} onChange={setSettings} onOpenLibrary={() => setPage('library')} onOpenSettings={() => setPage('settings')} />
         )}
+        {page === 'learn' && <LearnPage settings={settings.learn} onChange={(learn) => setSettings((s) => ({ ...s, learn }))} />}
         {page === 'library' && (
           <LibraryPage
             state={library}
