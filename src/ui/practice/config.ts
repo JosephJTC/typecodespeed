@@ -1,7 +1,7 @@
 import type { CompareOptions, WhitespaceRules } from '../../engine';
 import type { ErrorPolicy, SessionConfig } from '../../session';
 import type { TestMeta, TestType } from '../../stats';
-import { filterFiles, pickRandomFile, type FileQuery, type RefFile } from '../../library';
+import { filterFiles, pickRandomFile, type FileQuery, type Library, type RefFile } from '../../library';
 import { DEFAULT_SNIPPET_OPTIONS, pickSnippet, SAMPLES } from '../../snippets';
 
 export type { TestType } from '../../stats';
@@ -16,6 +16,9 @@ export interface PracticeSettings {
   refPath: string;
   /** Filters that limit which references `refRandom` may pick. */
   refQuery: FileQuery;
+  /** Same as `refPath`/`refQuery` for the GitHub repository (`gh`/`ghRandom`); never saved. */
+  ghPath: string;
+  ghQuery: FileQuery;
   mode: CompareOptions['mode'];
   comments: CompareOptions['comments'];
   custom: WhitespaceRules;
@@ -38,6 +41,8 @@ export const DEFAULT_SETTINGS: PracticeSettings = {
   customCode: '',
   refPath: '',
   refQuery: {},
+  ghPath: '',
+  ghQuery: {},
   mode: 'tolerant',
   comments: 'omit',
   custom: { indentation: 'ignore', inlineSpaces: 'collapse', lineBreaks: 'exact', blankLines: 'ignore' },
@@ -64,6 +69,10 @@ export function parseSettings(json: string | null): PracticeSettings {
   } catch {
     // Corrupt settings: fall back to the defaults.
   }
+  // The repository lives only in memory, so after a reload it is gone.
+  if (isGitHubSource(out.source as string)) out.source = DEFAULT_SETTINGS.source;
+  out.ghPath = '';
+  out.ghQuery = {};
   return out as unknown as PracticeSettings;
 }
 
@@ -77,7 +86,7 @@ export function loadSettings(): PracticeSettings {
 
 export function saveSettings(s: PracticeSettings): void {
   try {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...s, ghPath: '', ghQuery: {} }));
   } catch {
     // Storage unavailable (private mode): settings last for this visit only.
   }
@@ -85,6 +94,9 @@ export function saveSettings(s: PracticeSettings): void {
 
 export const isRefSource = (source: string) => source === 'ref' || source === 'refRandom';
 export const REF_PREFIX = 'ref:';
+export const isGitHubSource = (source: string) => source === 'gh' || source === 'ghRandom';
+/** History id prefix of the files of a GitHub repository. */
+export const ghPrefix = (repoName: string) => `gh:${repoName}:`;
 
 /** The code a test draws from, with what is needed to label the result. */
 export interface ResolvedSource {
@@ -101,8 +113,18 @@ export function resolveSource(
   names: { all: string; custom: string },
   rand: () => number = Math.random,
   previousId?: string,
+  /** Repository loaded from GitHub, for `gh` and `ghRandom`. */
+  repo: Library | null = null,
 ): ResolvedSource | null {
-  const ofFile = (f: RefFile | undefined): ResolvedSource | null => (f ? { id: REF_PREFIX + f.path, name: f.path, language: f.language, codes: [f.text] } : null);
+  const ofFile = (f: RefFile | undefined, prefix = REF_PREFIX, label = ''): ResolvedSource | null =>
+    f ? { id: prefix + f.path, name: label + f.path, language: f.language, codes: [f.text] } : null;
+  if (isGitHubSource(s.source)) {
+    if (!repo) return null;
+    const prefix = ghPrefix(repo.name);
+    const label = `${repo.name}: `;
+    if (s.source === 'gh') return ofFile(repo.files.find((f) => f.path === s.ghPath), prefix, label);
+    return ofFile(pickRandomFile(filterFiles(repo.files, s.ghQuery), rand, previousId?.startsWith(prefix) ? previousId.slice(prefix.length) : undefined), prefix, label);
+  }
   if (s.source === 'ref') return ofFile(files.find((f) => f.path === s.refPath));
   if (s.source === 'refRandom') return ofFile(pickRandomFile(filterFiles(files, s.refQuery), rand, previousId?.slice(REF_PREFIX.length)));
   if (s.source === 'custom') return s.customCode.trim() ? { id: 'custom', name: names.custom, language: 'cpp', codes: [s.customCode] } : null;

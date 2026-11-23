@@ -7,6 +7,7 @@ Es un sitio estático: funciona por completo en tu navegador, sin servidor ni cu
 ## Funciones
 
 - **Referencias locales:** elige tu carpeta `referencias` (o un ZIP, o archivos sueltos), explora carpetas y subcarpetas, busca, filtra por lenguaje y longitud, y practica un archivo concreto o uno al azar.
+- **Repositorios de GitHub:** sección aparte para abrir un repositorio público o privado, ver solo las carpetas que contienen código y practicar sus archivos. Ver [`docs/GITHUB.md`](docs/GITHUB.md).
 - **Práctica:** código completo, por tiempo o fragmento aleatorio (función, struct, ciclo…), con pausa, corrección con Retroceso y progreso por caracteres y tokens.
 - **Comparación consciente del código:** modo tolerante (solo importan los espacios que separan tokens), formato exacto y personalizado.
 - **Estadísticas:** WPM, caracteres por segundo, precisión, consistencia, errores por tipo, caracteres difíciles y lentos, confusiones, rendimiento por referencia y gráficas a lo largo del tiempo.
@@ -19,6 +20,8 @@ Es un sitio estático: funciona por completo en tu navegador, sin servidor ni cu
 2. Pulsa **Elegir carpeta…** y selecciona tu carpeta de referencias. El navegador pedirá permiso de lectura.
 3. Selecciona un archivo y pulsa **Practicar completa**, **Fragmento aleatorio** o **Por tiempo**. También puedes usar **Practicar una al azar** con los filtros activos.
 4. Escribe. Al terminar verás el análisis de la prueba; el resultado se guarda en **Estadísticas**.
+
+Para practicar con un repositorio de GitHub, ve a **GitHub**, pega un token de solo lectura si el repositorio es privado, escribe `usuario/repositorio` y pulsa **Abrir repositorio**.
 
 Sin referencias propias puedes practicar con los ejemplos incluidos o pegar código.
 
@@ -39,8 +42,9 @@ Se importan archivos `.cpp`, `.cc`, `.cxx`, `.h`, `.hpp`, `.c`, `.py`, `.java`, 
 
 Tus referencias nunca se suben a GitHub ni a ningún servidor:
 
-- La aplicación no tiene backend y su código no usa ninguna API de red (una prueba automatizada lo verifica).
-- El sitio publicado incluye una política de seguridad de contenido con `connect-src 'none'`: el propio navegador bloquea cualquier conexión de red desde la página.
+- La aplicación no tiene backend. El único módulo que usa la red es el cliente de la sección **GitHub** (`src/github/client.ts`), que solo hace peticiones GET de lectura a `https://api.github.com`; una prueba automatizada lo verifica.
+- El sitio publicado incluye una política de seguridad de contenido con `connect-src https://api.github.com`: el propio navegador bloquea cualquier otra conexión desde la página.
+- La sección **GitHub** descarga código a tu navegador, nunca envía tus referencias locales. El token se guarda solo en memoria salvo que pidas recordarlo, y entonces se guarda cifrado con tu contraseña. Detalles en [`docs/GITHUB.md`](docs/GITHUB.md).
 - Las referencias importadas, el historial y los ajustes se guardan solo en el almacenamiento local de tu navegador (IndexedDB y localStorage). **Quitar referencias** las borra; tus archivos originales nunca se modifican (el acceso es de solo lectura).
 - `referencias/` está en `.gitignore`, por si guardas tu carpeta dentro de una copia del repositorio.
 
@@ -78,6 +82,7 @@ Documentación técnica:
 - [`docs/PRACTICA.md`](docs/PRACTICA.md): sesión de práctica, captura de teclado y atajos.
 - [`docs/ESTADISTICAS.md`](docs/ESTADISTICAS.md): métricas, gráficas, historial y comparaciones.
 - [`docs/REFERENCIAS.md`](docs/REFERENCIAS.md): importación de referencias, privacidad y despliegue.
+- [`docs/GITHUB.md`](docs/GITHUB.md): repositorios de GitHub, tokens y seguridad.
 
 ## Despliegue en GitHub Pages
 
@@ -94,4 +99,5 @@ El sitio queda en `https://<usuario>.github.io/typecodespeed/`. La compilación 
 - La biblioteca importada es una copia local: si cambias tus archivos, usa **Actualizar desde la carpeta** (Chromium) o vuelve a importarlos.
 - Los datos viven en un navegador y un dispositivo. Para moverlos, exporta el historial en JSON e impórtalo en el otro.
 - Los filtros usan la ruta, el lenguaje y la longitud; todavía no se leen etiquetas ni metadatos del gestor de referencias.
+- Un repositorio de GitHub se descarga cada vez que lo abres y desaparece al recargar. Sin token se descargan como máximo 50 archivos de código; con token, 500.
 - Está pensada para teclado físico; en móviles la experiencia es limitada.

@@ -1,5 +1,7 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { t } from './i18n';
+import { GitHubPage } from './ui/github/GitHubPage';
+import { useGitHub } from './ui/github/useGitHub';
 import { LabPage } from './ui/lab/LabPage';
 import { LibraryPage } from './ui/library/LibraryPage';
 import { useLibrary } from './ui/library/useLibrary';
@@ -10,13 +12,14 @@ import { useHistory } from './ui/stats/history';
 import { StatsPage } from './ui/stats/StatsPage';
 import './index.css';
 
-const PAGES = ['practice', 'library', 'stats', 'settings', 'lab'] as const;
+const PAGES = ['practice', 'library', 'github', 'stats', 'settings', 'lab'] as const;
 type Page = (typeof PAGES)[number];
 
 export default function App() {
   const [page, setPage] = useState<Page>('practice');
   const [settings, setSettings] = useState<PracticeSettings>(loadSettings);
   const library = useLibrary();
+  const github = useGitHub();
   const history = useHistory();
   const files = library.library?.files ?? [];
 
@@ -42,11 +45,22 @@ export default function App() {
       </header>
       <main>
         {page === 'practice' && (
-          <PracticePage settings={settings} files={files} onChange={setSettings} onOpenLibrary={() => setPage('library')} onOpenSettings={() => setPage('settings')} />
+          <PracticePage settings={settings} files={files} repo={github.repo?.library ?? null} onChange={setSettings} onOpenLibrary={() => setPage('library')} onOpenSettings={() => setPage('settings')} />
         )}
         {page === 'library' && (
           <LibraryPage
             state={library}
+            settings={settings}
+            history={history.records ?? []}
+            onPractice={(patch) => {
+              setSettings((s) => ({ ...s, ...patch }));
+              setPage('practice');
+            }}
+          />
+        )}
+        {page === 'github' && (
+          <GitHubPage
+            state={github}
             settings={settings}
             history={history.records ?? []}
             onPractice={(patch) => {

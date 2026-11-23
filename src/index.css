@@ -182,3 +182,8 @@ button.file.active { background: rgba(88, 166, 255, 0.12); color: var(--accent);
   .explorer { grid-template-columns: 1fr; }
   .explorer-list { max-height: 40vh; }
 }
+
+.good { color: #3fb950; font-weight: 600; }
+.github-panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.github-panels h3 { margin-top: 0; }
+.github-panels form, .github-panels .card { display: flex; flex-direction: column; gap: 8px; }
