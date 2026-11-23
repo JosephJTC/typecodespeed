@@ -3,13 +3,14 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TypingSession } from '../../../session';
+import { DEFAULT_LEARN, type LearnSettings } from '../../../learn';
 import { TypingView } from '../TypingView';
 
 const META = { testType: 'full', sourceName: 'Prueba', sourceId: 'test', language: 'cpp', mode: 'tolerant', comments: 'omit', errorPolicy: 'advance' } as const;
 
 afterEach(cleanup);
 
-function setup(text: string, policy: 'advance' | 'block' = 'advance', onSettings = () => {}) {
+function setup(text: string, policy: 'advance' | 'block' = 'advance', onSettings = () => {}, guide?: LearnSettings) {
   const session = new TypingSession(text, {
     compare: { mode: 'tolerant', comments: 'omit' },
     language: 'cpp',
@@ -18,7 +19,7 @@ function setup(text: string, policy: 'advance' | 'block' = 'advance', onSettings
     idleTimeoutMs: 0,
   });
   const onRestart = vi.fn();
-  render(<TypingView session={session} meta={META} onRestart={onRestart} onSettings={onSettings} />);
+  render(<TypingView session={session} meta={META} onRestart={onRestart} onSettings={onSettings} guide={guide} />);
   const input = screen.getByRole('textbox') as HTMLTextAreaElement;
   return { session, input, onRestart };
 }
@@ -174,4 +175,22 @@ describe('Resultados', () => {
     act(() => input.focus());
     expect(session.status).toBe('running');
   });
+
+  it('la guía de dedos muestra la tecla y el dedo del siguiente carácter', async () => {
+    const user = userEvent.setup({ delay: null });
+    const { input } = setup('int x;', 'advance', () => {}, DEFAULT_LEARN);
+    const target = () => [...document.querySelectorAll('.kb-key.target')].map((e) => e.getAttribute('data-code'));
+    expect(target()).toEqual(['KeyI']);
+    expect(screen.getByTestId('practice-guide').textContent).toContain('medio derecho');
+    input.focus();
+    await user.keyboard('int');
+    expect(target()).toEqual(['Space']);
+    expect(document.querySelector('.kb-hands .finger.on')?.getAttribute('data-finger')).toBe('r-thumb');
+  });
+
+  it('sin la opción no hay guía de dedos', () => {
+    setup('int x;');
+    expect(screen.queryByTestId('practice-guide')).toBeNull();
+  });
 });
+

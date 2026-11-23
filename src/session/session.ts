@@ -451,6 +451,27 @@ export class TypingSession {
     ed.defer(to, end);
   }
 
+  /**
+   * The character to type next, for the finger guide: the next one of the
+   * reference, or the space or line break it still needs before. Undefined
+   * while editing earlier text or once the text is complete.
+   */
+  nextChar(): string | undefined {
+    if (this._status === 'finished' || !this.atFrontier()) return undefined;
+    const ev = this.evaluator;
+    const items = this.target.items;
+    const item = items[ev.pos];
+    if (!item) return undefined;
+    if (item.kind === 'char') return item.ch;
+    const next = items[ev.pos + 1];
+    if (next?.kind !== 'char') return undefined;
+    // Before any whitespace of the gap, the reference's own: a line break or a space.
+    const original = this.target.text.slice(item.src, item.srcEnd);
+    if (ev.gapTyped === 0 && original) return original.includes('\n') ? '\n' : original[0];
+    if (ev.peek(next.ch).status !== 'error') return next.ch;
+    return item.requireNewline || !item.spaces ? '\n' : ' ';
+  }
+
   private atFrontier(): boolean {
     return !this.editor.hasSelection && this.editor.cursor === this.pendingStart();
   }

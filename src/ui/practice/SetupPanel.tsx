@@ -102,6 +102,11 @@ export function SetupPanel({ settings: s, files, repo, ready, onChange, onStart,
           <span>{t('practice.hideGuide')}</span>
         </label>
         {s.hideGuide && <p className="hint small">{t('practice.hideGuideHelp')}</p>}
+        <label className="switch-row">
+          <input type="checkbox" className="switch" checked={s.fingerGuide} onChange={(e) => set('fingerGuide', e.target.checked)} />
+          <span>{t('practice.fingerGuide')}</span>
+        </label>
+        {s.fingerGuide && <p className="hint small">{t('practice.fingerGuideHelp')}</p>}
 
         {s.source === 'custom' && (
           <textarea

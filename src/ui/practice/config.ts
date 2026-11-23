@@ -33,6 +33,8 @@ export interface PracticeSettings {
   fontSize: number;
   /** Color theme; `system` follows the operating system. */
   theme: Theme;
+  /** Shows the keyboard and the recommended finger for the next key while practicing code. */
+  fingerGuide: boolean;
   /** Keyboard and guidance preferences of the Learn section. */
   learn: LearnSettings;
 }
@@ -63,6 +65,7 @@ export const DEFAULT_SETTINGS: PracticeSettings = {
   idleSec: 10,
   fontSize: 15,
   theme: 'dark',
+  fingerGuide: false,
   learn: DEFAULT_LEARN,
 };
 

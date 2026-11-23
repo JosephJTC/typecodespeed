@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { t, type MessageKey } from '../../i18n';
-import { keyLabel, type Board, type Finger, type KeyHighlight, type Layout, type PlacedKey, type Press } from '../../learn';
+import { FINGERS, handOf, keyLabel, type Board, type Finger, type KeyHighlight, type Layout, type PlacedKey, type Press } from '../../learn';
+import { HOME_KEY } from './home';
 
 const U = 40;
 const GAP = 2;
@@ -15,6 +16,57 @@ interface Props {
   targets?: readonly Press[];
   /** Error rate by key (0–1), drawn as a heat map instead of finger colors. */
   heat?: ReadonlyMap<string, number>;
+  /** Draws the hands over the keys, each finger on its home key; `animated` moves a finger to its target. */
+  hands?: { animated: boolean };
+}
+
+/** Space left under the board for the palms of the overlaid hands, in key units. */
+const PALM_ROOM = 1.1;
+
+/** Both hands resting on the home row, drawn over the board. */
+function HandsOverlay({ board, targets, animated }: { board: Board; targets: readonly Press[]; animated: boolean }) {
+  const at = (code: string) => board.keys.find((k) => k.code === code);
+  const center = (k: PlacedKey) => ({ x: (k.x + k.w / 2) * U, y: (k.y + Math.min(k.h, 1) / 2) * U });
+  const space = at('Space');
+  const active = new Map<Finger, string>();
+  for (const p of targets) if (p.finger) active.set(p.finger, p.code);
+  const base = (board.height + PALM_ROOM - 0.25) * U;
+  const tips = new Map<Finger, { x: number; y: number }>();
+  for (const f of FINGERS) {
+    const home = at(HOME_KEY[f]);
+    if (!home) continue;
+    if (!f.endsWith('thumb')) tips.set(f, center(home));
+    // Thumbs rest on the space bar, each on its own side.
+    else if (space) tips.set(f, { x: (space.x + space.w * (f === 'l-thumb' ? 0.3 : 0.7)) * U, y: (space.y + 0.5) * U });
+  }
+  const palm = (side: 'left' | 'right') => {
+    const xs = FINGERS.filter((f) => handOf(f) === side && !f.endsWith('thumb')).map((f) => tips.get(f)?.x ?? 0);
+    const from = Math.min(...xs) - 0.45 * U;
+    const to = Math.max(...xs) + 0.45 * U;
+    const top = (tips.get(side === 'left' ? 'l-index' : 'r-index')?.y ?? 0) + 1.7 * U;
+    return <rect key={side} className="palm" x={from} y={top} width={to - from} height={base - top} rx={0.5 * U} />;
+  };
+  return (
+    <g className={animated ? 'kb-hands animated' : 'kb-hands'} aria-hidden="true">
+      {palm('left')}
+      {palm('right')}
+      {FINGERS.map((f) => {
+        const tip = tips.get(f);
+        if (!tip) return null;
+        const code = active.get(f);
+        const target = code && animated ? at(code) : undefined;
+        const to = target && !f.endsWith('thumb') ? center(target) : tip;
+        const thumb = f.endsWith('thumb');
+        const w = 0.62 * U;
+        const bottom = thumb ? tip.y + 1.1 * U : tip.y + 2.1 * U;
+        return (
+          <g key={f} className={code ? `finger on f-${f}` : 'finger'} data-finger={f} style={{ transform: `translate(${to.x - tip.x}px, ${to.y - tip.y}px)` }}>
+            <rect x={tip.x - w / 2} y={tip.y - w / 2} width={w} height={bottom - tip.y + w / 2} rx={w / 2} transform={thumb ? `rotate(${f === 'l-thumb' ? 35 : -35} ${tip.x} ${tip.y})` : undefined} />
+          </g>
+        );
+      })}
+    </g>
+  );
 }
 
 function special(code: string, layout: Layout): string {
@@ -36,10 +88,10 @@ function isoEnterPath(k: PlacedKey): string {
 }
 
 /** The user's keyboard, with the target key and the finger assignment. */
-export const KeyboardView = memo(function KeyboardView({ board, layout, fingers, highlight, targets = [], heat }: Props) {
+export const KeyboardView = memo(function KeyboardView({ board, layout, fingers, highlight, targets = [], heat, hands }: Props) {
   const targetCodes = new Set(targets.map((p) => p.code));
   return (
-    <svg className="kb" viewBox={`0 0 ${board.width * U} ${board.height * U}`} role="img" aria-label={t('learn.keyboardLabel')}>
+    <svg className="kb" viewBox={`0 0 ${board.width * U} ${(board.height + (hands ? PALM_ROOM : 0)) * U}`} role="img" aria-label={t('learn.keyboardLabel')}>
       {board.keys.map((k) => {
         const finger = fingers.get(k.code);
         const isTarget = highlight !== 'none' && targetCodes.has(k.code);
@@ -63,6 +115,7 @@ export const KeyboardView = memo(function KeyboardView({ board, layout, fingers,
           </g>
         );
       })}
+      {hands && <HandsOverlay board={board} targets={targets} animated={hands.animated} />}
     </svg>
   );
 });
