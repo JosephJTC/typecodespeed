@@ -101,6 +101,8 @@ export const es = {
     hideGuide: 'Sin guía: ocultar el código pendiente al escribir',
     hideGuideHelp: 'El código se ve hasta tu primera tecla; después solo ves lo que escribes. Los errores, las métricas y el historial se calculan igual, y estas pruebas se comparan solo entre sí.',
     noGuideTag: 'sin guía',
+    fingerGuide: 'Guía de dedos: mostrar el teclado y el dedo de la siguiente tecla',
+    fingerGuideHelp: 'Usa el teclado y las opciones de guía de la sección «Aprender». No cambia la evaluación ni las métricas.',
     noGuideTyping: 'Sin guía: memoriza el código; se ocultará en cuanto empieces a escribir.',
     idlePause: 'Pausa automática por inactividad',
     idleOff: 'Desactivada',
@@ -371,6 +373,8 @@ export const es = {
       keyHighlights: { fingers: 'Colores por dedo y tecla objetivo', target: 'Solo la tecla objetivo', none: 'Sin resaltado' },
       hands: 'Manos',
       handsModes: { animated: 'Dedo animado hacia la tecla', static: 'Dedo resaltado, sin animación', none: 'No mostrar las manos' },
+      handsPosition: 'Posición de las manos',
+      handsPositions: { overlay: 'Sobre el teclado', side: 'Al lado del teclado', below: 'Debajo del teclado' },
     },
     config: {
       title: 'Configura tu teclado',

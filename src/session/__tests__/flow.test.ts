@@ -92,3 +92,25 @@ describe('espacios al final que quedan después del cursor', () => {
     expect(s.editor.cells.some((c) => c.ahead)).toBe(false);
   });
 });
+
+describe('siguiente carácter para la guía de dedos', () => {
+  it('sigue la referencia, con sus espacios y saltos de línea', () => {
+    const s = make('int x = 1;\nreturn x;');
+    expect(s.nextChar()).toBe('i');
+    s.input('int');
+    expect(s.nextChar()).toBe(' ');
+    s.input(' x');
+    expect(s.nextChar()).toBe(' ');
+    s.input('=');
+    expect(s.nextChar()).toBe(' ');
+    s.input(' 1;');
+    expect(s.nextChar()).toBe('\n');
+    s.input('\n');
+    expect(s.nextChar()).toBe('r');
+    s.move('left');
+    expect(s.nextChar()).toBeUndefined();
+    s.move('right');
+    s.input('return x;');
+    expect(s.nextChar()).toBeUndefined();
+  });
+});

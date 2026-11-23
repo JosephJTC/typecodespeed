@@ -20,7 +20,12 @@ El navegador no puede saber qué dedo usas. La aplicación muestra el dedo recom
 
 - Teclado en pantalla con la tecla objetivo y, si se quiere, todas las teclas coloreadas por dedo.
 - Dos manos con el dedo recomendado resaltado; opcionalmente el dedo se mueve hacia la tecla. Con «reducir movimiento» activado en el sistema no hay animación.
+- **Posición de las manos:** sobre el teclado (cada dedo apoyado en su tecla de la fila guía), al lado o debajo.
 - Niveles: **principiante** (toda la guía), **intermedio** (solo tecla y dedo) y **avanzado** (sin guía). Cada opción se puede cambiar por separado desde el menú «Guía».
+
+## En la práctica con código
+
+La opción «Guía de dedos» (en la configuración de la prueba o en Ajustes) muestra debajo del código el mismo teclado y las manos, con la tecla y el dedo del siguiente carácter, incluidos espacios y saltos de línea. Usa la configuración de teclado y de guía de esta sección. No cambia la evaluación, las métricas ni el historial.
 
 ## Lecciones
 

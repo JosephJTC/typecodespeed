@@ -38,7 +38,7 @@ describe('sección Aprender', () => {
 
     expect(screen.getByTestId('learn-instruction').textContent).toBe('Pulsa la tecla F con el índice izquierdo');
     expect(document.querySelector('.kb-key.target')?.getAttribute('data-code')).toBe('KeyF');
-    expect(document.querySelector('.hands .finger.on')?.getAttribute('data-finger')).toBe('l-index');
+    expect(document.querySelector('.kb-hands .finger.on')?.getAttribute('data-finger')).toBe('l-index');
 
     await user.keyboard('x');
     expect(screen.getByTestId('learn-errors').textContent).toBe('1');
@@ -104,5 +104,16 @@ describe('sección Aprender', () => {
     expect(document.querySelector('.kb-key.target')).toBeNull();
     expect(document.querySelector('.hands')).toBeNull();
     expect(screen.getByTestId('learn-instruction').textContent).not.toContain('índice');
+  });
+
+  it('la posición de las manos se elige en el menú de guía', async () => {
+    const user = await openLearn();
+    await user.click(screen.getByRole('button', { name: /Empezar: Teclas F J/ }));
+    expect(document.querySelector('.kb .kb-hands')).not.toBeNull();
+    expect(document.querySelector('svg.hands')).toBeNull();
+    fireEvent.change(screen.getByLabelText('Posición de las manos'), { target: { value: 'below' } });
+    expect(saved().handsPosition).toBe('below');
+    expect(document.querySelector('.kb .kb-hands')).toBeNull();
+    expect(document.querySelector('.guide.hands-below svg.hands .finger.on')?.getAttribute('data-finger')).toBe('l-index');
   });
 });

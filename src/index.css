@@ -536,3 +536,22 @@ button.lesson.next { border-left-color: var(--accent); }
 @media (prefers-reduced-motion: reduce) {
   .hands.animated .finger, .kb-key rect, .kb-key path { transition: none; }
 }
+
+/* Hands over the keyboard, and the finger guide in the practice */
+.guide.hands-below { flex-direction: column; flex-wrap: nowrap; }
+.guide.hands-below .kb { flex: none; width: 100%; }
+.guide.hands-below .hands { flex: none; width: min(280px, 60%); }
+.kb-hands { pointer-events: none; }
+.kb-hands .palm, .kb-hands .finger rect { fill: var(--text); fill-opacity: 0.1; stroke: var(--text); stroke-opacity: 0.35; stroke-width: 1.2; }
+.kb-hands .finger.on rect { fill: var(--f); fill-opacity: 0.55; stroke: var(--text); stroke-opacity: 0.9; stroke-width: 1.5; }
+.kb-hands.animated .finger { transition: transform 180ms ease-out; }
+.practice-guide { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.practice-guide .guide { width: 100%; }
+.practice-guide .kb { max-width: 600px; }
+.practice-guide .hands { flex-basis: 200px; }
+.finger-name { min-height: 1.3em; }
+.typing.with-guide .code-view { max-height: calc(100vh - 500px); min-height: 150px; }
+@media (max-width: 760px) {
+  .typing.with-guide .code-view { max-height: calc(100vh - 470px); min-height: 120px; }
+}
+@media (prefers-reduced-motion: reduce) { .kb-hands.animated .finger { transition: none; } }

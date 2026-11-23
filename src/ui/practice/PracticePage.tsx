@@ -63,6 +63,7 @@ export function PracticePage({ settings, files, repo, onChange, onOpenLibrary, o
       onRestart={restart}
       onNext={canNext ? () => start(run) : undefined}
       onSettings={() => setRun(null)}
+      guide={settings.fingerGuide ? settings.learn : undefined}
     />
   );
 }

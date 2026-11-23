@@ -1,5 +1,5 @@
 import { t } from '../../i18n';
-import { LEVELS, levelOf, type GuidanceLevel, type HandsMode, type KeyHighlight, type LearnSettings } from '../../learn';
+import { LEVELS, levelOf, type GuidanceLevel, type HandsMode, type HandsPosition, type KeyHighlight, type LearnSettings } from '../../learn';
 import { Icon } from '../components/Icon';
 
 interface Props {
@@ -37,6 +37,14 @@ export function GuidanceMenu({ settings: s, onChange }: Props) {
             {(['animated', 'static', 'none'] as const).map((v) => <option key={v} value={v}>{t(`learn.guidance.handsModes.${v}`)}</option>)}
           </select>
         </label>
+        {s.hands !== 'none' && (
+          <label>
+            {t('learn.guidance.handsPosition')}
+            <select value={s.handsPosition} onChange={(e) => onChange({ ...s, handsPosition: e.target.value as HandsPosition })}>
+              {(['overlay', 'side', 'below'] as const).map((v) => <option key={v} value={v}>{t(`learn.guidance.handsPositions.${v}`)}</option>)}
+            </select>
+          </label>
+        )}
         <label className="switch-row">
           <input type="checkbox" className="switch" checked={s.fingerGuide} onChange={(e) => onChange({ ...s, fingerGuide: e.target.checked })} />
           <span>{t('learn.guidance.fingerGuide')}</span>

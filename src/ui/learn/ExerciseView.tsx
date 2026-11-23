@@ -4,8 +4,7 @@ import { Exercise, generateExercise, keyLabel, learnedChars, PASS_ACCURACY, pres
 import { Icon } from '../components/Icon';
 import { fmt, formatTime, percent } from '../practice/format';
 import { GuidanceMenu } from './GuidanceMenu';
-import { HandsView } from './HandsView';
-import { KeyboardView } from './KeyboardView';
+import { FingerGuide } from './FingerGuide';
 import { lessonTitle } from './lessonTitle';
 import type { Keyboard } from './useKeyboard';
 
@@ -24,7 +23,7 @@ interface Props {
 
 /** Exercise screen: text to type, live feedback, and the keyboard and hands that show which finger to use. */
 export function ExerciseView({ lesson, next, keyboard, settings, progress, onSettings, onFinish, onOpen, onExit }: Props) {
-  const { layout, board, map, fingers, lessons } = keyboard;
+  const { layout, map, fingers, lessons } = keyboard;
   const inputRef = useRef<HTMLInputElement>(null);
   const composing = useRef(false);
   const [run, setRun] = useState(0);
@@ -195,10 +194,7 @@ export function ExerciseView({ lesson, next, keyboard, settings, progress, onSet
             {exercise.lastWrong !== null && settings.keyHighlight !== 'none' ? `${t('learn.exercise.wrong')} ` : ''}
             {settings.fingerGuide || settings.keyHighlight !== 'none' ? instruction() : exercise.started ? '' : t('learn.exercise.startHint')}
           </p>
-          <div className="guide">
-            <KeyboardView board={board} layout={layout} fingers={fingers} highlight={settings.keyHighlight} targets={presses} />
-            {settings.hands !== 'none' && <HandsView targets={presses} board={board} animated={settings.hands === 'animated'} />}
-          </div>
+          <FingerGuide keyboard={keyboard} settings={settings} stroke={stroke} />
           <p className="hint shortcuts">{exercise.started ? t('learn.exercise.shortcuts') : `${t('learn.exercise.startHint')} · ${t('learn.exercise.shortcuts')}`}</p>
         </>
       )}

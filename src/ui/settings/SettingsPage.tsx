@@ -33,7 +33,7 @@ function Group({ title, children }: { title: string; children: ReactNode }) {
 
 export function SettingsPage({ settings: s, onChange }: Props) {
   const set = <K extends keyof PracticeSettings>(k: K, v: PracticeSettings[K]) => onChange({ ...s, [k]: v });
-  const toggle = (k: 'autoIndent' | 'autoClose' | 'hideGuide') => (id: string) => (
+  const toggle = (k: 'autoIndent' | 'autoClose' | 'hideGuide' | 'fingerGuide') => (id: string) => (
     <input id={id} type="checkbox" className="switch" checked={s[k]} onChange={(e) => set(k, e.target.checked)} />
   );
   return (
@@ -85,6 +85,7 @@ export function SettingsPage({ settings: s, onChange }: Props) {
         <Row label={t('practice.autoIndent')} help={t('settings.autoIndentHelp')}>{toggle('autoIndent')}</Row>
         <Row label={t('practice.autoClose')} help={t('settings.autoCloseHelp')}>{toggle('autoClose')}</Row>
         <Row label={t('practice.hideGuide')} help={t('practice.hideGuideHelp')}>{toggle('hideGuide')}</Row>
+        <Row label={t('practice.fingerGuide')} help={t('practice.fingerGuideHelp')}>{toggle('fingerGuide')}</Row>
       </Group>
 
       <Group title={t('settings.appearance')}>

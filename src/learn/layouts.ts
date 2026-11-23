@@ -174,6 +174,8 @@ export function charMap(layout: Layout, available: ReadonlySet<string>): Map<str
   for (const [code, k] of entries) add(k.shift, [{ code, shift: true }]);
   if (layout.altGr) for (const [code, k] of entries) add(k.altgr, [{ code, altgr: true }]);
   add(' ', [{ code: 'Space' }]);
+  add('\n', [{ code: 'Enter' }]);
+  add('\t', [{ code: 'Tab' }]);
   for (const [code, k] of entries) {
     for (const [mark, shift] of [[k.deadBase, false], [k.deadShift, true]] as const) {
       if (!mark) continue;

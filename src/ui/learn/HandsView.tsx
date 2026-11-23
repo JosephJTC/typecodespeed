@@ -1,19 +1,6 @@
 import { t } from '../../i18n';
 import { handOf, type Board, type Finger, type Press } from '../../learn';
-
-/** Key each finger rests on. */
-const HOME_KEY: Readonly<Record<Finger, string>> = {
-  'l-pinky': 'KeyA',
-  'l-ring': 'KeyS',
-  'l-middle': 'KeyD',
-  'l-index': 'KeyF',
-  'l-thumb': 'Space',
-  'r-thumb': 'Space',
-  'r-index': 'KeyJ',
-  'r-middle': 'KeyK',
-  'r-ring': 'KeyL',
-  'r-pinky': 'Semicolon',
-};
+import { HOME_KEY } from './home';
 
 /** Finger shapes of the left hand: x, top, width and length; the right hand mirrors them. */
 const SHAPES: Array<{ finger: string; x: number; y: number; w: number; h: number; rotate?: number }> = [

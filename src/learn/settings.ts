@@ -4,6 +4,8 @@ import { LAYOUTS, type Geometry, type LayoutId } from './layouts';
 
 export type KeyHighlight = 'fingers' | 'target' | 'none';
 export type HandsMode = 'animated' | 'static' | 'none';
+/** Where the hands are drawn: over the keyboard, next to it or under it. */
+export type HandsPosition = 'overlay' | 'side' | 'below';
 export type GuidanceLevel = 'beginner' | 'intermediate' | 'advanced';
 
 /** Keyboard configuration and guidance preferences of the Learn section. */
@@ -16,6 +18,7 @@ export interface LearnSettings {
   fingerGuide: boolean;
   keyHighlight: KeyHighlight;
   hands: HandsMode;
+  handsPosition: HandsPosition;
 }
 
 export const DEFAULT_LEARN: LearnSettings = {
@@ -26,6 +29,7 @@ export const DEFAULT_LEARN: LearnSettings = {
   fingerGuide: true,
   keyHighlight: 'fingers',
   hands: 'animated',
+  handsPosition: 'overlay',
 };
 
 type Guidance = Pick<LearnSettings, 'fingerGuide' | 'keyHighlight' | 'hands'>;
@@ -58,5 +62,6 @@ export function sanitizeLearn(s: LearnSettings): LearnSettings {
     fingerGuide: typeof s.fingerGuide === 'boolean' ? s.fingerGuide : d.fingerGuide,
     keyHighlight: pick(s.keyHighlight, ['fingers', 'target', 'none'], d.keyHighlight),
     hands: pick(s.hands, ['animated', 'static', 'none'], d.hands),
+    handsPosition: pick(s.handsPosition, ['overlay', 'side', 'below'], d.handsPosition),
   };
 }
