@@ -1,11 +1,12 @@
 import { t, tp } from '../../i18n';
-import { filterFiles, type RefFile } from '../../library';
+import { filterFiles, type Library, type RefFile } from '../../library';
 import { SAMPLES } from '../../snippets';
 import { DURATIONS, type PracticeSettings, type TestType } from './config';
 
 interface Props {
   settings: PracticeSettings;
   files: readonly RefFile[];
+  repo: Library | null;
   /** Whether the current source has code to practice. */
   ready: boolean;
   onChange: (s: PracticeSettings) => void;
@@ -14,10 +15,12 @@ interface Props {
   onOpenSettings: () => void;
 }
 
-export function SetupPanel({ settings: s, files, ready, onChange, onStart, onOpenLibrary, onOpenSettings }: Props) {
+export function SetupPanel({ settings: s, files, repo, ready, onChange, onStart, onOpenLibrary, onOpenSettings }: Props) {
   const set = <K extends keyof PracticeSettings>(k: K, v: PracticeSettings[K]) => onChange({ ...s, [k]: v });
   const refFile = files.find((f) => f.path === s.refPath);
   const pool = filterFiles(files, s.refQuery).length;
+  const ghFile = repo?.files.find((f) => f.path === s.ghPath);
+  const ghPool = repo ? filterFiles(repo.files, s.ghQuery).length : 0;
   return (
     <form
       className="setup card"
@@ -56,6 +59,12 @@ export function SetupPanel({ settings: s, files, ready, onChange, onStart, onOpe
                 <option value="refRandom">{tp('practice.refRandom', pool)}</option>
               </optgroup>
             )}
+            {repo && (
+              <optgroup label={t('practice.githubGroup', { repo: repo.name })}>
+                <option value="gh">{ghFile ? t('practice.refSelected', { path: ghFile.path }) : t('practice.refNone')}</option>
+                <option value="ghRandom">{tp('practice.refRandom', ghPool)}</option>
+              </optgroup>
+            )}
             <optgroup label={t('practice.samples')}>
               {SAMPLES.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
               <option value="all">{t('practice.allSamples')}</option>
@@ -82,7 +91,7 @@ export function SetupPanel({ settings: s, files, ready, onChange, onStart, onOpe
           onChange={(e) => set('customCode', e.target.value)}
         />
       )}
-      {!ready && <p className="bad" role="alert">{t(s.source === 'custom' ? 'practice.emptySource' : 'practice.missingRef')}</p>}
+      {!ready && <p className="bad" role="alert">{t(s.source === 'custom' ? 'practice.emptySource' : s.source === 'gh' || s.source === 'ghRandom' ? 'practice.missingGitHub' : 'practice.missingRef')}</p>}
       <div className="actions">
         <button type="submit" className="primary" disabled={!ready} autoFocus>{t('practice.start')}</button>
         <button type="button" onClick={onOpenLibrary}>{t(files.length > 0 ? 'practice.chooseReference' : 'practice.importReferences')}</button>

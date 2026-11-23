@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { t } from '../../i18n';
-import type { RefFile } from '../../library';
+import type { Library, RefFile } from '../../library';
 import { TypingSession } from '../../session';
 import type { TestMeta } from '../../stats';
 import { metaFor, resolveSource, sessionConfig, textsFor, type PracticeSettings, type ResolvedSource } from './config';
@@ -18,17 +18,19 @@ interface Run {
 interface Props {
   settings: PracticeSettings;
   files: readonly RefFile[];
+  /** Repository loaded from GitHub (memory only). */
+  repo: Library | null;
   onChange: (s: PracticeSettings) => void;
   onOpenLibrary: () => void;
   onOpenSettings: () => void;
 }
 
-export function PracticePage({ settings, files, onChange, onOpenLibrary, onOpenSettings }: Props) {
+export function PracticePage({ settings, files, repo, onChange, onOpenLibrary, onOpenSettings }: Props) {
   const [run, setRun] = useState<Run | null>(null);
 
   const resolve = useCallback(
-    (previousId?: string) => resolveSource(settings, files, { all: t('practice.allSamplesShort'), custom: t('practice.customSourceShort') }, Math.random, previousId),
-    [settings, files],
+    (previousId?: string) => resolveSource(settings, files, { all: t('practice.allSamplesShort'), custom: t('practice.customSourceShort') }, Math.random, previousId, repo),
+    [settings, files, repo],
   );
 
   const start = useCallback(
@@ -51,9 +53,9 @@ export function PracticePage({ settings, files, onChange, onOpenLibrary, onOpenS
   }, [run, settings, start]);
 
   if (!run) {
-    return <SetupPanel settings={settings} files={files} ready={resolve() !== null} onChange={onChange} onStart={() => start()} onOpenLibrary={onOpenLibrary} onOpenSettings={onOpenSettings} />;
+    return <SetupPanel settings={settings} files={files} repo={repo} ready={resolve() !== null} onChange={onChange} onStart={() => start()} onOpenLibrary={onOpenLibrary} onOpenSettings={onOpenSettings} />;
   }
-  const canNext = settings.testType !== 'full' || settings.source === 'all' || settings.source === 'refRandom';
+  const canNext = settings.testType !== 'full' || settings.source === 'all' || settings.source === 'refRandom' || settings.source === 'ghRandom';
   return (
     <TypingView
       session={run.session}

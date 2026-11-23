@@ -3,11 +3,13 @@ import type { Plugin } from 'vite'
 import { defineConfig } from 'vitest/config'
 
 /**
- * The published site may only load its own files and may not open any network
- * connection (`connect-src 'none'`), so local references cannot be uploaded anywhere.
+ * The published site may only load its own files. The only connection it may open
+ * is to the GitHub REST API, used by the optional GitHub section to download code;
+ * every other destination is blocked by the browser, so local references cannot be
+ * uploaded anywhere.
  */
 export const CONTENT_SECURITY_POLICY =
-  "default-src 'self'; connect-src 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; form-action 'none'"
+  "default-src 'self'; connect-src https://api.github.com; img-src 'self' data:; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; form-action 'none'"
 
 const contentSecurityPolicy = (): Plugin => ({
   name: 'content-security-policy',

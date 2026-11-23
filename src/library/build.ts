@@ -31,7 +31,7 @@ export function extOf(path: string): string {
   return dot > 0 ? name.slice(dot + 1).toLowerCase() : '';
 }
 
-const isIgnored = (path: string) => path.split('/').some((part) => IGNORED_DIRS.has(part) || (part.startsWith('.') && part.length > 1));
+export const isIgnored = (path: string) => path.split('/').some((part) => IGNORED_DIRS.has(part) || (part.startsWith('.') && part.length > 1));
 
 /** Drops a single top-level folder shared by every path (the selected folder itself). */
 export function stripCommonRoot(paths: string[]): { root: string; strip: (p: string) => string } {
