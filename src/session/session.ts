@@ -382,6 +382,40 @@ export class TypingSession {
     return cells[j]?.ahead && cells[j].ch === ch ? j : -1;
   }
 
+  /**
+   * Offset of the inserted closing bracket that follows the cursor on its own
+   * line when the reference expects that bracket next (only whitespace in
+   * between), or -1.
+   */
+  private blockEnd(): number {
+    const ed = this.editor;
+    const cells = ed.cells;
+    if (ed.cursor !== this.pendingStart() || !(cells[ed.cursor]?.ahead && cells[ed.cursor].ch === '\n')) return -1;
+    let k = ed.cursor;
+    while (cells[k]?.ahead && isWs(cells[k].ch)) k++;
+    if (!(cells[k]?.ahead && isCloser(cells[k].ch))) return -1;
+    const items = this.target.items;
+    let i = this.evaluator.pos;
+    while (items[i] && (items[i].kind === 'gap' || isWs((items[i] as { ch: string }).ch))) i++;
+    const next = items[i];
+    return next?.kind === 'char' && next.ch === cells[k].ch ? k : -1;
+  }
+
+  /**
+   * Typing before whitespace that ends the text (a line break typed and then
+   * moved above, for example) leaves that whitespace out of the evaluation
+   * until the user types past it again, so it does not count as a mistake in
+   * the middle of what is being typed.
+   */
+  private deferTrailingSpace(): void {
+    const ed = this.editor;
+    const end = this.pendingStart();
+    const to = ed.selection[1];
+    if (to >= end) return;
+    for (let i = to; i < end; i++) if (!isWs(ed.cells[i].ch)) return;
+    ed.defer(to, end);
+  }
+
   private atFrontier(): boolean {
     return !this.editor.hasSelection && this.editor.cursor === this.pendingStart();
   }
@@ -402,14 +436,21 @@ export class TypingSession {
   private typeChar(ch: string): boolean {
     const ed = this.editor;
     const saved = this.config.errorPolicy === 'block' ? ed.save() : null;
-    const frontier = this.atFrontier();
+    this.deferTrailingSpace();
+    // Past the evaluated text (inserted brackets the cursor moved over are evaluated with this key).
+    const frontier = !ed.hasSelection && ed.cursor >= this.pendingStart();
     const [from, to] = ed.selection;
     const closer = !ed.hasSelection && isCloser(ch) ? this.aheadCloser(ch) : -1;
+    const blockEnd = ch === '\n' && frontier ? this.blockEnd() : -1;
     if (closer >= 0) {
       // Type over the closing bracket the editor inserted (dropping the line break it had to itself).
       ed.delete(ed.cursor, closer);
       ed.markTyped(ed.cursor);
       ed.setCursor(ed.cursor + 1);
+    } else if (blockEnd >= 0) {
+      // The reference closes the block here: this line break replaces the one inserted before the closing bracket.
+      ed.delete(ed.cursor, blockEnd);
+      ed.insert(ch);
     } else if (this.config.autoClose && isOpener(ch) && closesBefore(ed.cells[to]?.ch) && !inLiteral(ed.text, from)) {
       ed.insert(ch);
       ed.insertAt(ed.cursor, CLOSER_OF[ch], 'ahead');
