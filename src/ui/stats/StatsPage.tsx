@@ -39,7 +39,7 @@ export function StatsPage() {
         </div>
         <h2>{t('stats.history.detailTitle')}</h2>
         <p className="hint">
-          {formatDate(detail.finishedAt)} · {t(`practice.types.${detail.testType}`)} · {detail.sourceName} · {t(`modes.${detail.mode}`)} · {t(`stats.finish.${detail.finishReason}`)}
+          {formatDate(detail.finishedAt)} · {t(`practice.types.${detail.testType}`)} · {detail.sourceName} · {t(`modes.${detail.mode}`)}{detail.hideGuide && ` · ${t('practice.noGuideTag')}`} · {t(`stats.finish.${detail.finishReason}`)}
         </p>
         <RecordDetail record={detail} history={all} />
       </section>
@@ -203,7 +203,7 @@ export function StatsPage() {
                     <td>{formatDate(r.finishedAt)}</td>
                     <td>{t(`practice.types.${r.testType}`)}</td>
                     <td>{r.sourceName}</td>
-                    <td>{t(`modes.${r.mode}`)}</td>
+                    <td>{t(`modes.${r.mode}`)}{r.hideGuide && ` · ${t('practice.noGuideTag')}`}</td>
                     <td>{fmt(r.wpm, 1)}</td>
                     <td>{percent(r.accuracy)}</td>
                     <td>{percent(r.completion)}</td>

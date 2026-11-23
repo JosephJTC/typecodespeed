@@ -56,7 +56,12 @@ export function SettingsPage({ settings: s, onChange }: Props) {
           <input type="checkbox" checked={s.autoClose} onChange={(e) => set('autoClose', e.target.checked)} />
           {t('practice.autoClose')}
         </label>
+        <label className="checkbox">
+          <input type="checkbox" checked={s.hideGuide} onChange={(e) => set('hideGuide', e.target.checked)} />
+          {t('practice.hideGuide')}
+        </label>
       </div>
+      {s.hideGuide && <p className="hint">{t('practice.hideGuideHelp')}</p>}
 
       <h3>{t('settings.appearance')}</h3>
       <div className="controls">

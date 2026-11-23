@@ -66,6 +66,8 @@ export class TypingSession {
   /** Incremented on every change; lets UIs detect updates cheaply. */
   version = 0;
   private listeners = new Set<() => void>();
+  /** Whether something was typed in the current text (the guide stays visible until then). */
+  private startedText = false;
 
   constructor(text: string, config: SessionConfig) {
     this.config = config;
@@ -209,7 +211,16 @@ export class TypingSession {
   /** What to draw: the edited text, the inserted brackets and the pending code, with cursor and selection. */
   display(): Display {
     const ed = this.editor;
-    return buildDisplay(this.evaluator, { pending: this.pendingChars(), cursor: ed.cursor, anchor: ed.anchor });
+    return buildDisplay(this.evaluator, { pending: this.pendingChars(), cursor: ed.cursor, anchor: ed.anchor, hidePending: this.guideHidden });
+  }
+
+  /** Whether the pending code is hidden right now (`hideGuide` and the current text was started). */
+  get hideGuide(): boolean {
+    return !!this.config.hideGuide;
+  }
+
+  get guideHidden(): boolean {
+    return !!this.config.hideGuide && this.startedText;
   }
 
   pause(reason: PauseReason = 'user'): void {
@@ -356,6 +367,7 @@ export class TypingSession {
     }
     if (this.checkTimeUp()) return false;
     this.lastActivity = now;
+    this.startedText = true;
     return true;
   }
 
@@ -637,6 +649,7 @@ export class TypingSession {
     this.evaluator = new Evaluator(this.target);
     this.editor.reset();
     this.editor.takeDirty();
+    this.startedText = false;
     this.results = [];
     this.indexTokens();
   }

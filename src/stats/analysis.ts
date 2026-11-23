@@ -268,10 +268,11 @@ export function insights(records: readonly TestRecord[]): Insight[] {
   return out;
 }
 
-/** Earlier tests that are comparable to `record`: same kind of test and comparison mode. */
+/** Earlier tests that are comparable to `record`: same kind of test, comparison mode and guide visibility. */
 export function comparableTo(record: TestRecord, all: readonly TestRecord[]): TestRecord[] {
   return all.filter(
-    (r) => r.id !== record.id && r.finishedAt <= record.finishedAt && r.testType === record.testType && r.mode === record.mode && (r.timeLimitMs ?? 0) === (record.timeLimitMs ?? 0),
+    (r) => r.id !== record.id && r.finishedAt <= record.finishedAt && r.testType === record.testType && r.mode === record.mode && (r.timeLimitMs ?? 0) === (record.timeLimitMs ?? 0) &&
+      !!r.hideGuide === !!record.hideGuide,
   );
 }
 

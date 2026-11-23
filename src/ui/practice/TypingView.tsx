@@ -150,7 +150,7 @@ export function TypingView({ session, meta, onRestart, onNext, onSettings }: Pro
         {!focused && snap.status !== 'paused' && <div className="overlay" role="status">{t('practice.focusHint')}</div>}
       </div>
       <p className="hint">
-        {notice || (snap.status === 'ready' ? t('practice.typingHint') : `${t('practice.stats.time')}: ${formatTime(snap.elapsedMs)}`)}
+        {notice || (snap.status === 'ready' ? t(session.hideGuide ? 'practice.noGuideTyping' : 'practice.typingHint') : `${t('practice.stats.time')}: ${formatTime(snap.elapsedMs)}`)}
       </p>
       <p className="hint shortcuts">{t('practice.shortcuts')}</p>
       <div className="actions">

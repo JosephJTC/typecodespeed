@@ -79,6 +79,13 @@ describe('comparaciones', () => {
     ];
     expect(comparableTo(base, all).map((r) => r.id)).toEqual(['same']);
   });
+
+  it('separa las pruebas sin guía de las pruebas con guía', () => {
+    const base = rec({ id: 'x', finishedAt: 10, hideGuide: true });
+    const all = [base, rec({ id: 'blind', finishedAt: 5, hideGuide: true }), rec({ id: 'guided', finishedAt: 5 })];
+    expect(comparableTo(base, all).map((r) => r.id)).toEqual(['blind']);
+    expect(comparableTo(rec({ id: 'y', finishedAt: 10 }), all).map((r) => r.id)).toEqual(['guided']);
+  });
 });
 
 describe('progreso y tendencia', () => {

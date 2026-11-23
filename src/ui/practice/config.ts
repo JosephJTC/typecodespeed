@@ -25,6 +25,8 @@ export interface PracticeSettings {
   errorPolicy: ErrorPolicy;
   autoIndent: boolean;
   autoClose: boolean;
+  /** Hides the pending code once typing starts (memory practice); scoring is unchanged. */
+  hideGuide: boolean;
   idleSec: number;
   /** Code font size in pixels. */
   fontSize: number;
@@ -49,6 +51,7 @@ export const DEFAULT_SETTINGS: PracticeSettings = {
   errorPolicy: 'advance',
   autoIndent: true,
   autoClose: true,
+  hideGuide: false,
   idleSec: 10,
   fontSize: 15,
 };
@@ -161,6 +164,7 @@ export function sessionConfig(s: PracticeSettings, language: string, next?: () =
     nextText: next,
     autoIndent: s.autoIndent,
     autoClose: s.autoClose,
+    hideGuide: s.hideGuide,
     idleTimeoutMs: s.idleSec * 1000,
   };
 }
@@ -176,5 +180,6 @@ export function metaFor(s: PracticeSettings, source: ResolvedSource): TestMeta {
     comments: s.comments,
     errorPolicy: s.errorPolicy,
     timeLimitMs: s.testType === 'timed' ? s.durationSec * 1000 : undefined,
+    ...(s.hideGuide && { hideGuide: true }),
   };
 }
