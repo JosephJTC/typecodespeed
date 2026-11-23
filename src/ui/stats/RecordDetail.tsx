@@ -81,6 +81,7 @@ export function TimelineCharts({ record }: { record: TestRecord }) {
 export function ComparisonTable(props: { a: Pick<TestRecord, ComparedMetric>; b: Pick<TestRecord, ComparedMetric>; aLabel: string; bLabel: string }) {
   const cmp = compareRecords(props.a, props.b);
   return (
+    <div className="table-scroll">
     <table className="compare-table">
       <thead>
         <tr>
@@ -108,6 +109,7 @@ export function ComparisonTable(props: { a: Pick<TestRecord, ComparedMetric>; b:
         })}
       </tbody>
     </table>
+    </div>
   );
 }
 
@@ -130,8 +132,13 @@ export function AgainstHistory({ record, history }: { record: TestRecord; histor
 export function RecordDetail({ record, history }: { record: TestRecord; history: readonly TestRecord[] }) {
   return (
     <div className="record-detail">
-      <MetricCards record={record} />
+      <details className="more">
+        <summary>{t('practice.allMetrics')}</summary>
+        <MetricCards record={record} />
+      </details>
+      <h3>{t('stats.timelineTitle')}</h3>
       <TimelineCharts record={record} />
+      <h3>{t('stats.weaknesses')}</h3>
       <Breakdown data={record} />
       <h3>{t('stats.comparison.title')}</h3>
       <AgainstHistory record={record} history={history} />

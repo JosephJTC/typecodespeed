@@ -38,7 +38,7 @@ export function StatsPage() {
           <button onClick={() => setDetailId(null)}>{t('stats.history.back')}</button>
         </div>
         <h2>{t('stats.history.detailTitle')}</h2>
-        <p className="hint">
+        <p className="hint small">
           {formatDate(detail.finishedAt)} · {t(`practice.types.${detail.testType}`)} · {detail.sourceName} · {t(`modes.${detail.mode}`)}{detail.hideGuide && ` · ${t('practice.noGuideTag')}`} · {t(`stats.finish.${detail.finishReason}`)}
         </p>
         <RecordDetail record={detail} history={all} />
@@ -74,13 +74,15 @@ export function StatsPage() {
 
   return (
     <section className="stats-page">
-      <h2>{t('stats.title')}</h2>
-      <p className="hint">{t('stats.privacy')}</p>
+      <header className="page-head">
+        <h2>{t('stats.title')}</h2>
+        <p className="hint">{t('stats.privacy')}</p>
+      </header>
       {!history.persistent && <p className="bad" role="alert">{t('stats.notPersistent')}</p>}
       {history.failed && <p className="bad" role="alert">{t('stats.storageError')}</p>}
       {notice && <p role="status">{notice}</p>}
 
-      <div className="controls">
+      <div className="controls page-toolbar">
         <label>
           {t('stats.history.filter')}
           <select value={filter} onChange={(e) => setFilter(e.target.value as Filter)}>
@@ -100,7 +102,7 @@ export function StatsPage() {
       ) : (
         <>
           <h3>{t('stats.overview.title')}</h3>
-          <dl className="stats metric-cards" data-testid="overview">
+          <dl className="stats metric-cards overview" data-testid="overview">
             <div className="stat"><dt>{t('stats.overview.tests')}</dt><dd>{fmt(summary.tests)}</dd></div>
             <div className="stat"><dt>{t('stats.overview.totalTime')}</dt><dd>{formatTime(summary.totalTimeMs)}</dd></div>
             <div className="stat"><dt>{t('stats.overview.avgWpm')}</dt><dd>{fmt(summary.avgWpm, 1)}</dd></div>
