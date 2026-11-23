@@ -160,6 +160,12 @@ export class EditorBuffer {
   }
 
   /** Marks `[from, to)` as inserted ahead of the user (left out of the evaluation until typed past). */
+  /** Makes the inserted characters `[from, to)` part of the text, still marked as inserted by the editor. */
+  accept(from: number, to: number): void {
+    for (let i = from; i < to; i++) this.cells[i] = { ...this.cells[i], ahead: false };
+    this.touch(from);
+  }
+
   defer(from: number, to: number): void {
     for (let i = from; i < to; i++) this.cells[i] = { ...this.cells[i], ahead: true };
     this.touch(from);

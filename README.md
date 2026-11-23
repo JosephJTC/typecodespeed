@@ -12,7 +12,7 @@ Es un sitio estático: funciona por completo en tu navegador, sin servidor ni cu
 - **Comparación consciente del código:** modo tolerante (solo importan los espacios que separan tokens), formato exacto y personalizado.
 - **Estadísticas:** WPM, caracteres por segundo, precisión, consistencia, errores por tipo, caracteres difíciles y lentos, confusiones, rendimiento por referencia y gráficas a lo largo del tiempo.
 - **Historial local:** revisa pruebas anteriores, compara dos pruebas, exporta e importa en JSON.
-- **Ajustes:** modo de comparación, comentarios, política de errores, pausa automática, indentación automática, cierre automático de paréntesis, corchetes y llaves, modo sin guía (oculta el código pendiente al escribir, para practicar de memoria) y tamaño del código. Se guardan en el navegador.
+- **Ajustes:** modo de comparación, comentarios, política de errores, pausa automática, indentación automática, cierre automático de paréntesis, corchetes, llaves y comillas, modo sin guía (oculta el código pendiente al escribir, para practicar de memoria) y tamaño del código. Se guardan en el navegador.
 
 ## Uso
 

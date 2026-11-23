@@ -94,7 +94,7 @@ export const es = {
       block: 'Bloquear hasta escribir la tecla correcta',
     },
     autoIndent: 'Indentación automática al presionar Enter',
-    autoClose: 'Cerrar paréntesis, corchetes y llaves automáticamente',
+    autoClose: 'Cerrar paréntesis, corchetes, llaves y comillas automáticamente',
     hideGuide: 'Sin guía: ocultar el código pendiente al escribir',
     hideGuideHelp: 'El código se ve hasta tu primera tecla; después solo ves lo que escribes. Los errores, las métricas y el historial se calculan igual, y estas pruebas se comparan solo entre sí.',
     noGuideTag: 'sin guía',

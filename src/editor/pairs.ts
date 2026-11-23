@@ -11,6 +11,25 @@ const CLOSE_BEFORE = new Set([';', ':', '.', ',', '=', '}', ']', ')', '>', ' ', 
 
 export const closesBefore = (next: string | undefined): boolean => next === undefined || CLOSE_BEFORE.has(next);
 
+/** Quotes closed automatically: `"` strings and `'` character literals. */
+export const isQuote = (ch: string | undefined): boolean => ch === '"' || ch === "'";
+
+/**
+ * Whether typing quote `ch` at `pos` of `text` opens a pair, as in VS Code: in
+ * code (not inside a literal or comment), not right after a word character
+ * (`don't`, `1'000'000`) and before a character that allows closing.
+ */
+export function opensQuote(text: string, pos: number, next: string | undefined): boolean {
+  return closesBefore(next) && !/[A-Za-z0-9_]/.test(text[pos - 1] ?? '') && !inLiteral(text, pos);
+}
+
+/** Whether the character at `pos` is escaped by an odd number of backslashes before it. */
+export function isEscaped(text: string, pos: number): boolean {
+  let n = 0;
+  while (text[pos - 1 - n] === '\\') n++;
+  return n % 2 === 1;
+}
+
 /**
  * True when offset `pos` of C-like source `text` is inside a string, character
  * literal or comment (where brackets are plain text and must not be paired).

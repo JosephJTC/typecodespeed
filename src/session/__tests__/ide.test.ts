@@ -131,9 +131,7 @@ describe('cierre automático de paréntesis, corchetes y llaves', () => {
     expect(text(s)).toBe('if (x) {\n    \n}');
     expect(typed(s)).toBe('if (x) {\n    ');
     s.input('a();');
-    s.move('end');
-    expect(s.editor.cursor).toBe('if (x) {\n    a();'.length);
-    s.input('\n}');
+    // The closing bracket the editor inserted completes the text.
     expect(text(s)).toBe('if (x) {\n    a();\n}');
     expect(s.snapshot().finishReason).toBe('completed');
     expect(s.snapshot().errorsMade).toBe(0);
@@ -183,9 +181,9 @@ describe('cierre automático de paréntesis, corchetes y llaves', () => {
   it('no inserta pares dentro de cadenas, caracteres ni comentarios', () => {
     const s = make('f("(", \'[\'); // {\ng();', { compare: { mode: 'tolerant', comments: 'include' } });
     s.input('f("(');
-    expect(text(s)).toBe('f("()');
+    expect(text(s)).toBe('f("(")');
     s.input('", \'[');
-    expect(text(s)).toBe('f("(", \'[)');
+    expect(text(s)).toBe('f("(", \'[\')');
     s.input('\'');
     s.move('right');
     s.input('; // {');
@@ -295,5 +293,99 @@ describe('indentación automática', () => {
     s.input('#define N 5\nint x;');
     expect(s.snapshot().errorsMade).toBe(0);
     expect(typed(s)).toBe('#define N 5\n  int x;');
+  });
+});
+
+describe('cierre automático de comillas', () => {
+  it.each([
+    ['s = "ab";', 's = "', 's = ""'],
+    ["c = 'x';", "c = '", "c = ''"],
+  ])('%j: la comilla se duplica y escribir la de cierre avanza sobre ella', (src, start, paired) => {
+    const s = make(src);
+    s.input(start);
+    expect(text(s)).toBe(paired);
+    expect(typed(s)).toBe(start);
+    s.input(src.slice(start.length));
+    expect(text(s)).toBe(src);
+    expect(s.snapshot()).toMatchObject({ finishReason: 'completed', errorsMade: 0, uncorrected: 0 });
+  });
+
+  it('la comilla pendiente se dibuja en su lugar dentro del código pendiente', () => {
+    const s = make('s = "ab";');
+    s.input('s = "');
+    expect(s.display().text).toBe('s = "ab";');
+  });
+
+  it('no duplica después de una letra o dígito ni dentro de comentarios', () => {
+    const s = make("int n = 1'000; // don't", { compare: { mode: 'tolerant', comments: 'include' } });
+    s.input("int n = 1'");
+    expect(text(s)).toBe("int n = 1'");
+    s.input("000; // don'");
+    expect(text(s)).toBe("int n = 1'000; // don'");
+  });
+
+  it('una comilla escapada dentro de la cadena no cierra la cadena', () => {
+    const s = make('s = "a\\"b";');
+    s.input('s = "a\\"');
+    expect(text(s)).toBe('s = "a\\""');
+    expect(typed(s)).toBe('s = "a\\"');
+    s.input('b";');
+    expect(text(s)).toBe('s = "a\\"b";');
+    expect(s.snapshot()).toMatchObject({ finishReason: 'completed', errorsMade: 0 });
+  });
+
+  it('retroceso en un par de comillas vacío borra ambas', () => {
+    const s = make('s = "ab";');
+    s.input('s = "');
+    s.backspace();
+    expect(text(s)).toBe('s = ');
+  });
+
+  it('desactivado, no duplica comillas', () => {
+    const s = make('s = "ab";', { autoClose: false });
+    s.input('s = "');
+    expect(text(s)).toBe('s = "');
+  });
+});
+
+describe('fin con los cierres ya insertados', () => {
+  it('al escribir lo último, los cierres insertados completan el texto', () => {
+    const s = make('int main() {\n    return 0;\n}');
+    s.input('int main() {\nreturn 0;');
+    expect(text(s)).toBe('int main() {\n    return 0;\n}');
+    const snap = s.snapshot();
+    expect(snap).toMatchObject({ status: 'finished', finishReason: 'completed', errorsMade: 0, uncorrected: 0 });
+    expect(s.log.filter((l) => l.ch === '}' && !l.auto)).toHaveLength(0);
+  });
+
+  it('funciona con bloques anidados', () => {
+    const s = make('int main() {\n    if (x) {\n        f();\n    }\n}');
+    s.input('int main() {\nif (x) {\nf();');
+    expect(text(s)).toBe('int main() {\n    if (x) {\n        f();\n    }\n}');
+    expect(s.snapshot().finishReason).toBe('completed');
+  });
+
+  it('los cierres insertados no cuentan como pulsaciones ni para el WPM', () => {
+    const a = make('f(x);');
+    a.input('f(x);');
+    const b = make('g() {\n}');
+    b.input('g() {');
+    expect(b.snapshot().finishReason).toBe('completed');
+    expect(b.snapshot().correctChars).toBe(a.snapshot().correctChars);
+  });
+
+  it('no termina si todavía falta código por escribir', () => {
+    const s = make('f(a, b);');
+    s.input('f(a');
+    expect(s.snapshot().status).toBe('running');
+    expect(text(s)).toBe('f(a)');
+  });
+
+  it('en pruebas por tiempo pasa al siguiente texto', () => {
+    const texts = ['h();'];
+    const s = make('g() {\n}', { timeLimitMs: 60_000, nextText: () => texts.shift() ?? 'z;' });
+    s.input('g() {');
+    expect(s.texts).toEqual(['g() {\n}', 'h();']);
+    expect(text(s)).toBe('');
   });
 });
