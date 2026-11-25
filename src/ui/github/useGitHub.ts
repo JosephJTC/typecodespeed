@@ -1,6 +1,7 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   createGitHubClient,
+  forgetRememberedRawKey,
   forgetSealedToken,
   GitHubError,
   isValidToken,
@@ -8,8 +9,11 @@ import {
   loadRepo,
   loadSealedToken,
   MIN_PASSPHRASE,
-  openToken,
+  loadRememberedRawKey,
+  openTokenAndKey,
+  openTokenWithRawKey,
   parseRepo,
+  rememberRawKey,
   saveSealedToken,
   sealToken,
   type RepoLoad,
@@ -101,6 +105,23 @@ export function useGitHub(): GitHubState {
     }
   }, []);
 
+  // With a remembered key the token unlocks itself while the tab lives.
+  useEffect(() => {
+    if (!sealed || token.current) return;
+    const rawKey = loadRememberedRawKey();
+    if (!rawKey) return;
+    let cancelled = false;
+    void (async () => {
+      const value = await openTokenWithRawKey(sealed, rawKey);
+      if (!value || cancelled) return;
+      const list = await check(value);
+      if (list && !cancelled) commit(value, list);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [sealed, check, commit]);
+
   const submitToken = useCallback(
     async (raw: string, passphrase: string | null) => {
       const value = raw.trim();
@@ -141,13 +162,16 @@ export function useGitHub(): GitHubState {
       setError(null);
       setBusy('token');
       try {
-        const value = await openToken(sealed, passphrase);
-        if (!value) {
+        const opened = await openTokenAndKey(sealed, passphrase);
+        if (!opened) {
           setError({ key: 'wrongPassphrase' });
           return;
         }
-        const list = await check(value);
-        if (list) commit(value, list);
+        const list = await check(opened.token);
+        if (list) {
+          rememberRawKey(opened.rawKey);
+          commit(opened.token, list);
+        }
       } finally {
         setBusy(null);
       }
@@ -159,6 +183,7 @@ export function useGitHub(): GitHubState {
     abort.current?.abort();
     token.current = null;
     forgetSealedToken();
+    forgetRememberedRawKey();
     setSealed(null);
     setTokenKind(null);
     setRepos([]);

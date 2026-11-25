@@ -33,6 +33,8 @@ export interface PracticeSettings {
   fontSize: number;
   /** Color theme; `system` follows the operating system. */
   theme: Theme;
+  /** Accent color palette. */
+  palette: Palette;
   /** Shows the keyboard and the recommended finger for the next key while practicing code. */
   fingerGuide: boolean;
   /** Keyboard and guidance preferences of the Learn section. */
@@ -41,6 +43,9 @@ export interface PracticeSettings {
 
 export type Theme = 'dark' | 'light' | 'system';
 export const THEMES: Theme[] = ['dark', 'light', 'system'];
+/** Accent color palette of the interface. */
+export type Palette = 'azul' | 'violeta' | 'verde' | 'naranja' | 'rosa';
+export const PALETTES: Palette[] = ['azul', 'violeta', 'verde', 'naranja', 'rosa'];
 
 export const DURATIONS = [15, 30, 60, 120, 300];
 export const IDLE_OPTIONS = [0, 5, 10, 30];
@@ -65,6 +70,7 @@ export const DEFAULT_SETTINGS: PracticeSettings = {
   idleSec: 10,
   fontSize: 15,
   theme: 'dark',
+  palette: 'azul',
   fingerGuide: false,
   learn: DEFAULT_LEARN,
 };
@@ -89,6 +95,7 @@ export function parseSettings(json: string | null): PracticeSettings {
   if (isGitHubSource(out.source as string)) out.source = DEFAULT_SETTINGS.source;
   out.ghPath = '';
   out.ghQuery = {};
+  if (!PALETTES.includes(out.palette as Palette)) out.palette = 'azul';
   out.learn = sanitizeLearn(out.learn as LearnSettings);
   return out as unknown as PracticeSettings;
 }
