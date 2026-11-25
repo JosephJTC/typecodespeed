@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { useState } from 'react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TypingSession } from '../../../session';
@@ -28,16 +29,21 @@ const older = quickRecord('abcdef;', 'abxdef;', { ms: 400, id: 'older', finished
 const newer = quickRecord('abcdef;', 'abcdef;', { ms: 200, id: 'newer', finishedAt: Date.UTC(2026, 0, 2), meta: { sourceName: 'DSU' } });
 const timed = quickRecord('ab;', 'ab;', { id: 'timed', finishedAt: Date.UTC(2026, 0, 3), meta: { testType: 'timed', timeLimitMs: 15000, sourceName: 'BFS' } });
 
+function Harness() {
+  const [detailId, setDetailId] = useState<string | null>(null);
+  return <StatsPage detailId={detailId} onOpenDetail={setDetailId} onCloseDetail={() => setDetailId(null)} />;
+}
+
 describe('página de estadísticas', () => {
   it('sin historial muestra el mensaje vacío', async () => {
-    render(<StatsPage />);
+    render(<Harness />);
     await flush();
     expect(screen.getByText(/Todavía no hay pruebas guardadas/)).toBeTruthy();
   });
 
   it('muestra el resumen calculado con las pruebas guardadas', async () => {
     await seed(older, newer);
-    render(<StatsPage />);
+    render(<Harness />);
     await flush();
     const overview = within(screen.getByTestId('overview'));
     expect(overview.getByText('Pruebas').nextSibling?.textContent).toBe('2');
@@ -52,7 +58,7 @@ describe('página de estadísticas', () => {
 
   it('filtra por tipo de prueba', async () => {
     await seed(older, newer, timed);
-    render(<StatsPage />);
+    render(<Harness />);
     await flush();
     expect(screen.getByText('(3 pruebas)')).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Tipo de prueba'), { target: { value: 'timed' } });
@@ -63,7 +69,7 @@ describe('página de estadísticas', () => {
   it('compara dos pruebas seleccionadas', async () => {
     const user = userEvent.setup();
     await seed(older, newer);
-    render(<StatsPage />);
+    render(<Harness />);
     await flush();
     const button = screen.getByRole('button', { name: 'Comparar seleccionadas' }) as HTMLButtonElement;
     expect(button.disabled).toBe(true);
@@ -80,7 +86,7 @@ describe('página de estadísticas', () => {
   it('abre el detalle de una prueba con sus gráficas', async () => {
     const user = userEvent.setup();
     await seed(older);
-    render(<StatsPage />);
+    render(<Harness />);
     await flush();
     await user.click(screen.getByRole('button', { name: 'Ver detalle' }));
     expect(screen.getByText('Detalle de la prueba')).toBeTruthy();
@@ -95,7 +101,7 @@ describe('página de estadísticas', () => {
     const user = userEvent.setup();
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
     await seed(older, newer);
-    render(<StatsPage />);
+    render(<Harness />);
     await flush();
     await user.click(screen.getAllByRole('button', { name: 'Eliminar' })[0]);
     expect((await store.list()).length).toBe(2);

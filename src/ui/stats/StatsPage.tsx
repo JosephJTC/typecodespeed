@@ -12,11 +12,17 @@ import { RecordDetail } from './RecordDetail';
 const WINDOW = 5;
 type Filter = TestType | 'all';
 
-export function StatsPage() {
+interface Props {
+  /** Record open in the detail view; kept in the URL so the back button works. */
+  detailId: string | null;
+  onOpenDetail: (id: string) => void;
+  onCloseDetail: () => void;
+}
+
+export function StatsPage({ detailId, onOpenDetail, onCloseDetail }: Props) {
   const history = useHistory();
   const [filter, setFilter] = useState<Filter>('all');
   const [selected, setSelected] = useState<string[]>([]);
-  const [detailId, setDetailId] = useState<string | null>(null);
   const [comparing, setComparing] = useState(false);
   const [notice, setNotice] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
@@ -35,7 +41,7 @@ export function StatsPage() {
     return (
       <section className="stats-page">
         <div className="actions">
-          <button onClick={() => setDetailId(null)}>{t('stats.history.back')}</button>
+          <button onClick={onCloseDetail}>{t('stats.history.back')}</button>
         </div>
         <h2>{t('stats.history.detailTitle')}</h2>
         <p className="hint small">
@@ -199,9 +205,9 @@ export function StatsPage() {
                 </tr>
               </thead>
               <tbody>
-                {records.map((r) => (
-                  <tr key={r.id} className={selected.includes(r.id) ? 'selected' : ''}>
-                    <td><input type="checkbox" aria-label={t('stats.history.select')} checked={selected.includes(r.id)} onChange={() => toggle(r.id)} /></td>
+                {[...records].sort((a, b) => b.finishedAt - a.finishedAt).map((r) => (
+                  <tr key={r.id} className={selected.includes(r.id) ? 'selected' : ''} onClick={() => onOpenDetail(r.id)} title={t('stats.history.view')}>
+                    <td><input type="checkbox" aria-label={t('stats.history.select')} checked={selected.includes(r.id)} onChange={() => toggle(r.id)} onClick={(e) => e.stopPropagation()} /></td>
                     <td>{formatDate(r.finishedAt)}</td>
                     <td>{t(`practice.types.${r.testType}`)}</td>
                     <td>{r.sourceName}</td>
@@ -212,9 +218,10 @@ export function StatsPage() {
                     <td>{fmt(r.errorsMade)}</td>
                     <td>{formatTime(r.durationMs)}</td>
                     <td className="row-actions">
-                      <button onClick={() => setDetailId(r.id)}>{t('stats.history.view')}</button>
+                      <button onClick={(e) => { e.stopPropagation(); onOpenDetail(r.id); }}>{t('stats.history.view')}</button>
                       <button
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           if (window.confirm(t('stats.history.confirmRemove'))) {
                             setSelected((s) => s.filter((x) => x !== r.id));
                             void history.remove(r.id);
