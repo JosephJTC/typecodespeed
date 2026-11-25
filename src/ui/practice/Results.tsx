@@ -40,11 +40,11 @@ export function Results({ session, meta, onRestart, onNext, onSettings }: Props)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Enter') return;
+      if (e.key !== 'Enter' || !(e.ctrlKey || e.metaKey)) return;
       // Let Enter activate the focused control (e.g. «Cambiar configuración»).
       if (e.target instanceof HTMLElement && e.target.closest('button, a, input, select, textarea')) return;
       e.preventDefault();
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && onNext) onNext();
+      if (e.shiftKey && onNext) onNext();
       else onRestart();
     };
     window.addEventListener('keydown', onKey);
@@ -62,7 +62,7 @@ export function Results({ session, meta, onRestart, onNext, onSettings }: Props)
           </p>
         </div>
         <div className="toolbar">
-          <button className="primary" onClick={onRestart} title="Enter">
+          <button className="primary" onClick={onRestart} title="Ctrl+Enter">
             <Icon name="restart" size={15} />
             {t('practice.restart')}
           </button>

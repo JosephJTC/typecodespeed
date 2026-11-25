@@ -20,6 +20,20 @@ type LibraryTab = 'local' | 'github';
 
 const COLLAPSED_KEY = 'typecodespeed.sidebar';
 
+interface Route {
+  page: Page;
+  /** Open record in Statistics, so the browser's back button closes it. */
+  detail: string | null;
+}
+
+function readRoute(): Route {
+  const parts = window.location.hash.replace(/^#\/?/, '').split('/');
+  const page = (PAGES as readonly string[]).includes(parts[0]) ? (parts[0] as Page) : 'practice';
+  return { page, detail: page === 'stats' && parts[1] ? decodeURIComponent(parts[1]) : null };
+}
+
+const navHash = (page: Page, detail?: string) => `#/${page}${detail ? `/${encodeURIComponent(detail)}` : ''}`;
+
 function readCollapsed(): boolean {
   try {
     return localStorage.getItem(COLLAPSED_KEY) === 'collapsed';
@@ -52,7 +66,18 @@ function usePalette(palette: Palette) {
 }
 
 export default function App() {
-  const [page, setPage] = useState<Page>('practice');
+  const [route, setRoute] = useState<Route>(readRoute);
+  const page = route.page;
+  useEffect(() => {
+    const onHash = () => setRoute(readRoute());
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+  // Changing the hash pushes a history entry, so the browser's back button works.
+  const setPage = (p: Page) => {
+    if (window.location.hash !== navHash(p)) window.location.hash = navHash(p);
+    else setRoute(readRoute());
+  };
   const [settings, setSettings] = useState<PracticeSettings>(loadSettings);
   const [collapsed, setCollapsed] = useState(readCollapsed);
   const [libraryTab, setLibraryTab] = useState<LibraryTab>('local');
@@ -146,7 +171,17 @@ export default function App() {
             )}
           </section>
         )}
-        {page === 'stats' && <StatsPage />}
+        {page === 'stats' && (
+          <StatsPage
+            detailId={route.detail}
+            onOpenDetail={(id) => {
+              window.location.hash = navHash('stats', id);
+            }}
+            onCloseDetail={() => {
+              window.location.hash = navHash('stats');
+            }}
+          />
+        )}
         {page === 'settings' && <SettingsPage settings={settings} onChange={setSettings} />}
         {page === 'lab' && <LabPage />}
       </main>

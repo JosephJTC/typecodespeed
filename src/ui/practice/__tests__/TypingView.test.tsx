@@ -149,7 +149,7 @@ describe('TypingView', () => {
 });
 
 describe('Resultados', () => {
-  it('Enter activa el botón enfocado y, sin foco en un botón, reinicia', async () => {
+  it('Enter solo no reinicia; Ctrl+Enter reinicia y Enter activa el botón enfocado', async () => {
     const user = userEvent.setup({ delay: null });
     const onSettings = vi.fn();
     const { input, onRestart } = setup('a;', 'advance', onSettings);
@@ -161,6 +161,8 @@ describe('Resultados', () => {
     expect(onRestart).not.toHaveBeenCalled();
     (document.activeElement as HTMLElement).blur();
     await user.keyboard('{Enter}');
+    expect(onRestart).not.toHaveBeenCalled();
+    await user.keyboard('{Control>}{Enter}{/Control}');
     expect(onRestart).toHaveBeenCalledTimes(1);
   });
 

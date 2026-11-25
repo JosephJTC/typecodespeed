@@ -567,3 +567,6 @@ button.lesson.next { border-left-color: var(--accent); }
   .typing.with-guide .code-view { max-height: calc(100vh - 470px); min-height: 120px; }
 }
 @media (prefers-reduced-motion: reduce) { .kb-hands.animated .finger { transition: none; } }
+
+.history-table tbody tr { cursor: pointer; }
+.history-table tbody tr:hover { background: var(--surface-2); }
