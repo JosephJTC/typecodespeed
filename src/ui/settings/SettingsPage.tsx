@@ -1,7 +1,7 @@
 import { useId, type ReactElement, type ReactNode } from 'react';
 import { t, tp } from '../../i18n';
 import { CustomRules } from '../components/RuleSelect';
-import { DEFAULT_SETTINGS, FONT_SIZES, IDLE_OPTIONS, THEMES, type PracticeSettings } from '../practice/config';
+import { DEFAULT_SETTINGS, FONT_SIZES, IDLE_OPTIONS, PALETTES, THEMES, type PracticeSettings } from '../practice/config';
 
 interface Props {
   settings: PracticeSettings;
@@ -93,6 +93,13 @@ export function SettingsPage({ settings: s, onChange }: Props) {
           {(id) => (
             <select id={id} value={s.theme} onChange={(e) => set('theme', e.target.value as PracticeSettings['theme'])}>
               {THEMES.map((x) => <option key={x} value={x}>{t(`settings.themes.${x}`)}</option>)}
+            </select>
+          )}
+        </Row>
+        <Row label={t('settings.palette')} help={t('settings.paletteHelp')}>
+          {(id) => (
+            <select id={id} value={s.palette} onChange={(e) => set('palette', e.target.value as PracticeSettings['palette'])}>
+              {PALETTES.map((x) => <option key={x} value={x}>{t(`settings.palettes.${x}`)}</option>)}
             </select>
           )}
         </Row>

@@ -7,7 +7,7 @@ Es un sitio estático: funciona por completo en tu navegador, sin servidor ni cu
 ## Funciones
 
 - **Referencias locales:** elige tu carpeta `referencias` (o un ZIP, o archivos sueltos), explora carpetas y subcarpetas, busca, filtra por lenguaje y longitud, y practica un archivo concreto o uno al azar.
-- **Repositorios de GitHub:** sección aparte para abrir un repositorio público o privado, ver solo las carpetas que contienen código y practicar sus archivos. Ver [`docs/GITHUB.md`](docs/GITHUB.md).
+- **Repositorios de GitHub:** pestaña dentro de **Biblioteca** para abrir un repositorio público o privado, ver solo las carpetas que contienen código y practicar sus archivos. Ver [`docs/GITHUB.md`](docs/GITHUB.md).
 - **Práctica:** código completo, por tiempo o fragmento aleatorio (función, struct, ciclo…), con pausa, corrección con Retroceso y progreso por caracteres y tokens.
 - **Comparación consciente del código:** modo tolerante (solo importan los espacios que separan tokens), formato exacto y personalizado.
 - **Estadísticas:** WPM, caracteres por segundo, precisión, consistencia, errores por tipo, caracteres difíciles y lentos, confusiones, rendimiento por referencia y gráficas a lo largo del tiempo.
@@ -23,7 +23,7 @@ Es un sitio estático: funciona por completo en tu navegador, sin servidor ni cu
 3. Selecciona un archivo y pulsa **Practicar completa**, **Fragmento aleatorio** o **Por tiempo**. También puedes usar **Practicar una al azar** con los filtros activos.
 4. Escribe. Al terminar verás el análisis de la prueba; el resultado se guarda en **Estadísticas**.
 
-Para practicar con un repositorio de GitHub, ve a **GitHub**, pega un token de solo lectura si el repositorio es privado, escribe `usuario/repositorio` y pulsa **Abrir repositorio**.
+Para practicar con un repositorio de GitHub, ve a **Biblioteca → GitHub**, pega un token de solo lectura si el repositorio es privado, escribe `usuario/repositorio` y pulsa **Abrir repositorio**.
 
 Sin referencias propias puedes practicar con los ejemplos incluidos o pegar código.
 

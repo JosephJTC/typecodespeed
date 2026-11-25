@@ -37,7 +37,7 @@ const flush = () => act(async () => {});
 async function importFolder(user: ReturnType<typeof userEvent.setup>) {
   render(<App />);
   await flush();
-  await user.click(screen.getByRole('button', { name: 'Referencias' }));
+  await user.click(screen.getByRole('button', { name: 'Biblioteca' }));
   await flush();
   fireEvent.change(screen.getAllByLabelText('Elegir carpeta…', { selector: 'input' })[0], { target: { files: FILES } });
   await screen.findByText('3 archivos', { exact: false });
@@ -85,7 +85,7 @@ describe('explorador de referencias', () => {
     expect(saved).toHaveLength(1);
     expect(saved[0]).toMatchObject({ sourceId: 'ref:Grafos/bfs.cpp', sourceName: 'Grafos/bfs.cpp', language: 'cpp', completion: 1, testType: 'full' });
     // Recently practiced references appear in the explorer.
-    await user.click(screen.getByRole('button', { name: 'Referencias' }));
+    await user.click(screen.getByRole('button', { name: 'Biblioteca' }));
     await flush();
     expect(screen.getByText('Practicadas recientemente')).toBeTruthy();
   });
@@ -102,7 +102,7 @@ describe('explorador de referencias', () => {
     const user = userEvent.setup();
     render(<App />);
     await flush();
-    await user.click(screen.getByRole('button', { name: 'Referencias' }));
+    await user.click(screen.getByRole('button', { name: 'Biblioteca' }));
     await flush();
     fireEvent.change(screen.getByLabelText('Elegir archivos…', { selector: 'input' }), { target: { files: [file('foto.png', 'x')] } });
     expect(await screen.findByText(/No se encontraron archivos de código compatibles/)).toBeTruthy();
@@ -114,7 +114,7 @@ describe('otro fragmento', () => {
     const user = userEvent.setup({ delay: null });
     render(<App />);
     await flush();
-    await user.click(screen.getByRole('button', { name: 'Referencias' }));
+    await user.click(screen.getByRole('button', { name: 'Biblioteca' }));
     await flush();
     const code = 'void a() {\n  // uno\n  x();\n}\n\nvoid b() {\n  // dos\n  y();\n}\n';
     fireEvent.change(screen.getByLabelText('Elegir archivos…', { selector: 'input' }), { target: { files: [file('dos.cpp', code)] } });

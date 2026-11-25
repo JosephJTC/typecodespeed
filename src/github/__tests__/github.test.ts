@@ -1,7 +1,20 @@
 import { describe, expect, it, vi } from 'vitest';
 import { API_ORIGIN, createGitHubClient, GitHubError, type Fetch } from '../client';
 import { listRepos, loadRepo, MAX_FILES, parseRepo } from '../repo';
-import { forgetSealedToken, isFineGrained, isValidToken, loadSealedToken, openToken, saveSealedToken, sealToken } from '../token';
+import {
+  forgetRememberedRawKey,
+  forgetSealedToken,
+  isFineGrained,
+  isValidToken,
+  loadRememberedRawKey,
+  loadSealedToken,
+  openToken,
+  openTokenAndKey,
+  openTokenWithRawKey,
+  rememberRawKey,
+  saveSealedToken,
+  sealToken,
+} from '../token';
 
 const TOKEN = 'github_pat_11ABCDEFG0123456789_abcdefghijklmnopqrstuvwxyz';
 const sha = (n: number) => n.toString(16).padStart(40, '0');
@@ -99,6 +112,21 @@ describe('token', () => {
     const bytes = Uint8Array.from(atob(sealed.data), (c) => c.charCodeAt(0));
     bytes[0] ^= 1;
     expect(await openToken({ ...sealed, data: btoa(String.fromCharCode(...bytes)) }, 'clave12345')).toBeNull();
+  });
+
+  it('la clave recordada abre el token sin la contraseña y muere con la pestaña', async () => {
+    const sealed = await sealToken(TOKEN, 'contraseña larga');
+    const opened = await openTokenAndKey(sealed, 'contraseña larga');
+    expect(opened?.token).toBe(TOKEN);
+    expect(await openTokenAndKey(sealed, 'otra contraseña')).toBeNull();
+    expect(await openTokenWithRawKey(sealed, opened!.rawKey)).toBe(TOKEN);
+    expect(await openTokenWithRawKey(sealed, btoa('0'.repeat(32)))).toBeNull();
+    if (typeof sessionStorage !== 'undefined') {
+      rememberRawKey(opened!.rawKey);
+      expect(loadRememberedRawKey()).toBe(opened!.rawKey);
+      forgetRememberedRawKey();
+      expect(loadRememberedRawKey()).toBeNull();
+    }
   });
 
   it('solo se guarda cifrado y se puede olvidar', async () => {

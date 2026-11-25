@@ -1,6 +1,6 @@
 # Repositorios de GitHub
 
-La sección **GitHub** es una función aparte de **Referencias**: permite abrir un repositorio público o privado, explorar solo las carpetas que contienen código y practicar sus archivos con las mismas modalidades (completa, fragmento aleatorio y por tiempo). Las referencias locales no cambian.
+La pestaña **GitHub** vive dentro de **Biblioteca**, junto a **Mis archivos**: permite abrir un repositorio público o privado, explorar solo las carpetas que contienen código y practicar sus archivos con las mismas modalidades (completa, fragmento aleatorio y por tiempo). Las referencias locales no cambian.
 
 ## Uso
 
@@ -26,7 +26,7 @@ Los repositorios públicos se pueden abrir sin token, pero GitHub permite solo 6
 | Riesgo | Medida |
 |---|---|
 | Token con demasiados permisos | Se recomienda un token fine-grained de solo lectura limitado a ciertos repositorios; si pegas un token clásico se muestra una advertencia. La aplicación solo hace peticiones de lectura. |
-| Robo del token guardado | Por defecto el token vive solo en la memoria de la pestaña y nunca se muestra en la página. Si eliges recordarlo, se cifra con AES-GCM de 256 bits y una clave derivada de tu contraseña con PBKDF2-SHA256 (310 000 iteraciones, sal aleatoria). La contraseña no se guarda. |
+| Robo del token guardado | Por defecto el token vive solo en la memoria de la pestaña y nunca se muestra en la página. Si eliges recordarlo, se cifra con AES-GCM de 256 bits y una clave derivada de tu contraseña con PBKDF2-SHA256 (310 000 iteraciones, sal aleatoria). La contraseña no se guarda; solo la clave derivada se conserva en `sessionStorage` mientras la pestaña siga abierta, para no pedir la contraseña en cada recarga, y desaparece al cerrarla. |
 | Fuga del token en URLs, historial o registros | El token solo viaja en la cabecera `Authorization` hacia `https://api.github.com`. Nunca va en la URL ni en los ajustes guardados, y la aplicación no escribe nada en la consola. |
 | Envío de datos a otros sitios | La política de seguridad del sitio solo permite conexiones a `https://api.github.com`. Todas las peticiones son GET sin cuerpo, sin cookies (`credentials: 'omit'`), sin `Referer` y sin seguir redirecciones. Solo `src/github/client.ts` puede usar la red; una prueba automatizada lo verifica. |
 | Entradas manipuladas | El repositorio, el usuario y la rama se validan antes de armar cualquier ruta (se rechazan otros dominios, `..`, `?`, `#`, credenciales en la URL, etc.), cada parte se codifica y la URL final se comprueba contra el origen de la API. Los SHA de los archivos se validan antes de pedirlos. El token se valida para que no pueda inyectar cabeceras. |

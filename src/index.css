@@ -37,6 +37,12 @@
   color: var(--text);
   -webkit-font-smoothing: antialiased;
 }
+/* Accent palettes. Dark-theme tones first, light-theme overrides below. */
+:root[data-palette='violeta'] { --accent: #a78bfa; --accent-strong: #8b5cf6; --accent-soft: rgba(167, 139, 250, 0.12); }
+:root[data-palette='verde'] { --accent: #4ade80; --accent-strong: #22c55e; --accent-soft: rgba(74, 222, 128, 0.12); }
+:root[data-palette='naranja'] { --accent: #fb923c; --accent-strong: #f97316; --accent-soft: rgba(251, 146, 60, 0.12); }
+:root[data-palette='rosa'] { --accent: #f472b6; --accent-strong: #ec4899; --accent-soft: rgba(244, 114, 182, 0.12); }
+
 :root[data-theme='light'] {
   color-scheme: light;
   --bg: #f5f6f8;
@@ -51,6 +57,12 @@
   --accent: #2563eb;
   --accent-strong: #1d4fd8;
   --accent-soft: rgba(37, 99, 235, 0.09);
+}
+:root[data-theme='light'][data-palette='violeta'] { --accent: #7c3aed; --accent-strong: #6d28d9; --accent-soft: rgba(124, 58, 237, 0.09); }
+:root[data-theme='light'][data-palette='verde'] { --accent: #16a34a; --accent-strong: #15803d; --accent-soft: rgba(22, 163, 74, 0.09); }
+:root[data-theme='light'][data-palette='naranja'] { --accent: #ea580c; --accent-strong: #c2410c; --accent-soft: rgba(234, 88, 12, 0.09); }
+:root[data-theme='light'][data-palette='rosa'] { --accent: #db2777; --accent-strong: #be185d; --accent-soft: rgba(219, 39, 119, 0.09); }
+:root[data-theme='light'] {
   --good: #1a7f37;
   --good-soft: rgba(26, 127, 55, 0.08);
   --bad: #cf222e;

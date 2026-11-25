@@ -7,15 +7,16 @@ import { LabPage } from './ui/lab/LabPage';
 import { LearnPage } from './ui/learn/LearnPage';
 import { LibraryPage } from './ui/library/LibraryPage';
 import { useLibrary } from './ui/library/useLibrary';
-import { loadSettings, saveSettings, type PracticeSettings, type Theme } from './ui/practice/config';
+import { loadSettings, saveSettings, type Palette, type PracticeSettings, type Theme } from './ui/practice/config';
 import { PracticePage } from './ui/practice/PracticePage';
 import { SettingsPage } from './ui/settings/SettingsPage';
 import { useHistory } from './ui/stats/history';
 import { StatsPage } from './ui/stats/StatsPage';
 import './index.css';
 
-const PAGES = ['practice', 'learn', 'library', 'github', 'stats', 'settings', 'lab'] as const;
+const PAGES = ['practice', 'learn', 'library', 'stats', 'settings', 'lab'] as const;
 type Page = (typeof PAGES)[number];
+type LibraryTab = 'local' | 'github';
 
 const COLLAPSED_KEY = 'typecodespeed.sidebar';
 
@@ -43,10 +44,18 @@ function useTheme(theme: Theme) {
   }, [theme]);
 }
 
+/** Applies the accent color palette to the document. */
+function usePalette(palette: Palette) {
+  useEffect(() => {
+    document.documentElement.dataset.palette = palette;
+  }, [palette]);
+}
+
 export default function App() {
   const [page, setPage] = useState<Page>('practice');
   const [settings, setSettings] = useState<PracticeSettings>(loadSettings);
   const [collapsed, setCollapsed] = useState(readCollapsed);
+  const [libraryTab, setLibraryTab] = useState<LibraryTab>('local');
   const library = useLibrary();
   const github = useGitHub();
   const history = useHistory();
@@ -54,6 +63,7 @@ export default function App() {
 
   useEffect(() => saveSettings(settings), [settings]);
   useTheme(settings.theme);
+  usePalette(settings.palette);
 
   const toggleCollapsed = () => {
     setCollapsed((c) => {
@@ -103,26 +113,38 @@ export default function App() {
         )}
         {page === 'learn' && <LearnPage settings={settings.learn} onChange={(learn) => setSettings((s) => ({ ...s, learn }))} />}
         {page === 'library' && (
-          <LibraryPage
-            state={library}
-            settings={settings}
-            history={history.records ?? []}
-            onPractice={(patch) => {
-              setSettings((s) => ({ ...s, ...patch }));
-              setPage('practice');
-            }}
-          />
-        )}
-        {page === 'github' && (
-          <GitHubPage
-            state={github}
-            settings={settings}
-            history={history.records ?? []}
-            onPractice={(patch) => {
-              setSettings((s) => ({ ...s, ...patch }));
-              setPage('practice');
-            }}
-          />
+          <section className="library-shell">
+            <div className="learn-bar">
+              <div className="segments" role="tablist" aria-label={t('library.tabsLabel')}>
+                {(['local', 'github'] as const).map((x) => (
+                  <button key={x} role="tab" aria-selected={libraryTab === x} className={libraryTab === x ? 'chip active' : 'chip'} onClick={() => setLibraryTab(x)}>
+                    {t(`library.tabs.${x}`)}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {libraryTab === 'local' ? (
+              <LibraryPage
+                state={library}
+                settings={settings}
+                history={history.records ?? []}
+                onPractice={(patch) => {
+                  setSettings((s) => ({ ...s, ...patch }));
+                  setPage('practice');
+                }}
+              />
+            ) : (
+              <GitHubPage
+                state={github}
+                settings={settings}
+                history={history.records ?? []}
+                onPractice={(patch) => {
+                  setSettings((s) => ({ ...s, ...patch }));
+                  setPage('practice');
+                }}
+              />
+            )}
+          </section>
         )}
         {page === 'stats' && <StatsPage />}
         {page === 'settings' && <SettingsPage settings={settings} onChange={setSettings} />}
