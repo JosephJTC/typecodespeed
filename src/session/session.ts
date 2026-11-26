@@ -198,8 +198,35 @@ export class TypingSession {
   /** Moves the cursor (extending the selection with Shift). Does not start the clock. */
   move(motion: Motion, extend = false): void {
     if (this._status === 'finished') return;
-    this.editor.move(motion, extend);
+    const ed = this.editor;
+    ed.move(motion, extend);
+    const limit = this.aheadLimit();
+    if (ed.cursor > limit) ed.setCursor(limit, extend);
     this.emit();
+  }
+
+  /**
+   * How far the cursor may go into the brackets inserted ahead: only over
+   * those the reference expects next (with whitespace in between), so moving
+   * right never skips code still to be typed, like the `;` of `break ;`.
+   */
+  private aheadLimit(): number {
+    const cells = this.editor.cells;
+    const items = this.target.items;
+    let k = this.pendingStart();
+    let i = this.evaluator.pos;
+    let limit = k;
+    for (;;) {
+      for (; cells[k]?.ahead && isWs(cells[k].ch); k++) {
+        // Whitespace the user typed and left out of the evaluation for now.
+        if (!cells[k].auto) limit = k + 1;
+      }
+      while (items[i] && (items[i].kind === 'gap' || isWs((items[i] as { ch: string }).ch))) i++;
+      const item = items[i];
+      if (!cells[k]?.ahead || item?.kind !== 'char' || item.ch !== cells[k].ch) return limit;
+      limit = ++k;
+      i++;
+    }
   }
 
   selectAll(): void {

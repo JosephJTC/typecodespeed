@@ -168,4 +168,28 @@ describe('edición con cursor libre', () => {
       expect(s.evaluator.pos).toBe(expected.pos);
     }
   });
+
+  it('las flechas no pasan sobre código pendiente hacia los cierres insertados', () => {
+    const s = make('for (long long t1 = 0; t1 < n; t1 ++) {\n    if (expo) {\n        break ;\n    }\n}\n');
+    s.input('for (long long t1 = 0; t1 < n; t1 ++) {\nif (expo) {\nbreak\n');
+    const at = s.editor.cursor;
+    for (const m of ['right', 'right', 'end', 'down', 'wordRight', 'docEnd'] as const) {
+      s.move(m);
+      expect(s.editor.cursor).toBe(at);
+    }
+    s.move('right', true);
+    expect(s.editor.hasSelection).toBe(false);
+    s.input(';');
+    expect(s.status).toBe('finished');
+    expect(s.snapshot().uncorrected).toBe(0);
+  });
+
+  it('las flechas sí pasan sobre los cierres que la referencia espera a continuación', () => {
+    const s = make('for (int i = 0; i < n; i++) {\n    f();\n}\nreturn 0;');
+    s.input('for (int i = 0; i < n; i++) {\nf();\n');
+    s.move('right');
+    s.input('\nreturn 0;');
+    expect(s.editor.text).toBe('for (int i = 0; i < n; i++) {\n    f();\n}\nreturn 0;');
+    expect(s.snapshot().uncorrected).toBe(0);
+  });
 });
